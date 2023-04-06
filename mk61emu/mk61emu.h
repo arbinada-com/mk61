@@ -90,7 +90,8 @@ extern void IR2_free(IR2 *self);
 /**
  * Chipset MK61
  */
-typedef enum {
+typedef enum
+{
     mk61emu_mode_61,
     mk61emu_mode_54
 } mk61emu_mode;

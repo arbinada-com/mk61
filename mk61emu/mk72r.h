@@ -12,17 +12,17 @@ EXTERN_C int test();
 
 enum MK72rMode
 {
-  MK_MODE_EMU61,
-  MK_MODE_RAPIRA
+    MK_MODE_EMU61,
+    MK_MODE_RAPIRA
 };
 
 class MK72r
 {
-  public:
+public:
     MK72r(MK72rMode mode);
     ~MK72r();
     MK72Result Init();
-  public:
+public:
     MK72Result BeginOutput();
     const char* GetOutput();
     MK72Result EndOutput();
@@ -37,7 +37,7 @@ class MK72r
     bool IsFinished();
     bool IsOutputRequired();
 
-  private:
+private:
     MK72rMode m_mode;
     MK72Engine* m_engine;
     bool m_finished;

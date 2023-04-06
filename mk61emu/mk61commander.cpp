@@ -51,43 +51,43 @@ void MK61Commander::Run()
             char name[MAX_FILE_NAME + sizeof(file_ext) + 1];
             switch (this->m_last_parse_result.cmd_kind)
             {
-                case mk61cmd_quit:
-                    quit = true;
+            case mk61cmd_quit:
+                quit = true;
+                break;
+            case mk61cmd_off:
+                m_emu->SetPowerState(MK72Engine_Off);
+                break;
+            case mk61cmd_on:
+                m_emu->SetPowerState(MK72Engine_On);
+                break;
+            case mk61cmd_load:
+            case mk61cmd_save:
+                memset(name_raw, 0, MAX_FILE_NAME + 1);
+                mk_printf("Имя файла: ");
+                if (InputName(name_raw, MAX_FILE_NAME) == false)
+                {
+                    mk_show_message(mk_message_error, "Неправильное имя. Допустимы только заглавные буквы, цифры и _.");
                     break;
-                case mk61cmd_off:
-                    m_emu->SetPowerState(MK72Engine_Off);
-                    break;
-                case mk61cmd_on:
-                    m_emu->SetPowerState(MK72Engine_On);
-                    break;
-                case mk61cmd_load:
-                case mk61cmd_save:
-                    memset(name_raw, 0, MAX_FILE_NAME + 1);
-                    mk_printf("Имя файла: ");
-                    if (InputName(name_raw, MAX_FILE_NAME) == false)
-                    {
-                        mk_show_message(mk_message_error, "Неправильное имя. Допустимы только заглавные буквы, цифры и _.");
-                        break;
-                    }
-                    memset(name, 0, MAX_FILE_NAME + sizeof(file_ext) + 1);
-                    transliterate_from_windows1251(name_raw, name, MAX_FILE_NAME);
-                    strcat(name, file_ext);
-                    if (this->m_last_parse_result.cmd_kind == mk61cmd_save)
-                        m_emu->SaveState(name, &result);
-                    else
-                        m_emu->LoadState(name, &result);
-                    if (result.succeeded == true)
-                        mk_show_message(mk_message_info,
-                                        this->m_last_parse_result.cmd_kind == mk61cmd_save ?
-                                        "Состояние сохранено" : "Состояние загружено");
-                    else
-                        mk_show_message(mk_message_error, result.message);
-                    break;
-                case mk61cmd_keys:
-                case mk61cmd_unknown:
-                    break;
-                case mk61cmd_empty:
-                    break;
+                }
+                memset(name, 0, MAX_FILE_NAME + sizeof(file_ext) + 1);
+                transliterate_from_windows1251(name_raw, name, MAX_FILE_NAME);
+                strcat(name, file_ext);
+                if (this->m_last_parse_result.cmd_kind == mk61cmd_save)
+                    m_emu->SaveState(name, &result);
+                else
+                    m_emu->LoadState(name, &result);
+                if (result.succeeded == true)
+                    mk_show_message(mk_message_info,
+                                    this->m_last_parse_result.cmd_kind == mk61cmd_save ?
+                                    "Состояние сохранено" : "Состояние загружено");
+                else
+                    mk_show_message(mk_message_error, result.message);
+                break;
+            case mk61cmd_keys:
+            case mk61cmd_unknown:
+                break;
+            case mk61cmd_empty:
+                break;
             }
             memset(cmd, 0, MAX_LINE_LEN_UTF8 + 1);
         }
@@ -106,14 +106,14 @@ int MK61Commander::mk_show_message(const mk_message_t message_type, const char *
     int result = -1;
     switch (message_type)
     {
-        case mk_message_info:
-            break;
-        case mk_message_warn:
-            mk_printf(LL_P LL_R LL_E LL_D LL_U LL_P LL_R LL_E LL_ZH LL_D LL_E LL_N LL_I LL_E ": ");
-            break;
-        case mk_message_error:
-            mk_printf(LL_O LL_SH LL_I LL_B LL_K LL_A ": ");
-            break;
+    case mk_message_info:
+        break;
+    case mk_message_warn:
+        mk_printf(LL_P LL_R LL_E LL_D LL_U LL_P LL_R LL_E LL_ZH LL_D LL_E LL_N LL_I LL_E ": ");
+        break;
+    case mk_message_error:
+        mk_printf(LL_O LL_SH LL_I LL_B LL_K LL_A ": ");
+        break;
     }
     char buf[MAX_LINE_LEN + 1];
     memset(buf, 0, sizeof(buf));
@@ -188,33 +188,33 @@ bool MK61Commander::GetCommand(char *cmdstr, int num)
     int c = mk_getch(true, false);
     switch(c)
     {
-        case '\b':
-            // Удаление последнего введенного символа
-            i = strlen(cmdstr);
-            if (i > 0 && i < num)
-                cmdstr[i - 1] = 0;
-            break;
-        case 27:
-            // Очистка всей введенной последовательности
-            memset(cmdstr, 0, num);
-        default:
-            if (c == '\n')
-                result = true;
-            memset(curr, 0, 2);
-            if ((c > 31 && c < 127) || c == '\n')
-            {
-                curr[0] = c;
-                strcat(cmdstr, curr);
-            }
-            else if (c > 127)
-            {
+    case '\b':
+        // Удаление последнего введенного символа
+        i = strlen(cmdstr);
+        if (i > 0 && i < num)
+            cmdstr[i - 1] = 0;
+        break;
+    case 27:
+        // Очистка всей введенной последовательности
+        memset(cmdstr, 0, num);
+    default:
+        if (c == '\n')
+            result = true;
+        memset(curr, 0, 2);
+        if ((c > 31 && c < 127) || c == '\n')
+        {
+            curr[0] = c;
+            strcat(cmdstr, curr);
+        }
+        else if (c > 127)
+        {
 #ifdef __unix__
-                curr[0] = convert_char_utf8_to_windows1251(c);
+            curr[0] = convert_char_utf8_to_windows1251(c);
 #else
-                curr[0] = c;
+            curr[0] = c;
 #endif
-                strcat(cmdstr, curr);
-            }
+            strcat(cmdstr, curr);
+        }
     }
     return result;
 }

@@ -10,8 +10,8 @@ int test()
 
 MK72r::MK72r(MK72rMode mode)
 {
-  m_mode = mode;
-  m_engine = NULL;
+    m_mode = mode;
+    m_engine = NULL;
 }
 
 MK72r::~MK72r()
@@ -26,17 +26,17 @@ MK72r::~MK72r()
 
 MK72Result MK72r::Init()
 {
-  m_finished = true;
-  switch (m_mode)
-  {
-  case MK_MODE_EMU61:
-      m_engine = new MK61Emu();
-      m_engine->SetPowerState(MK72Engine_On);
-      break;
-  case MK_MODE_RAPIRA:
-      return MK_ERROR;
-  }
-  return MK_OK;
+    m_finished = true;
+    switch (m_mode)
+    {
+    case MK_MODE_EMU61:
+        m_engine = new MK61Emu();
+        m_engine->SetPowerState(MK72Engine_On);
+        break;
+    case MK_MODE_RAPIRA:
+        return MK_ERROR;
+    }
+    return MK_OK;
 }
 
 MK72Result MK72r::BeginOutput()
@@ -101,7 +101,7 @@ MK72Result MK72r::DoStep()
 
 const char* MK72r::GetVersionStr()
 {
-  return MK72R_VER_STR;
+    return MK72R_VER_STR;
 }
 
 bool MK72r::IsFinished()

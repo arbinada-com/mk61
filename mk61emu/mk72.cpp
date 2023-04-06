@@ -78,7 +78,7 @@ void *mk_calloc (size_t n, size_t size)
 
 void *mk_malloc (size_t size)
 {
-	return malloc(size);
+    return malloc(size);
 }
 
 void mk_free(void *p)
@@ -111,8 +111,8 @@ static size_t utf8_length(const char lead)
 int mk_kbhit(void)
 {
 #ifdef TARGET_CALC
-	// TODO
-	return 0;
+    // TODO
+    return 0;
 #else
 #ifdef __linux__
     struct timeval tv;
@@ -350,14 +350,14 @@ int mk_sleep(const int milliseconds)
     return 0;
 #else
 #ifdef _WIN32
-SetLastError(0);
-Sleep(milliseconds);
-return GetLastError() ? -1 : 0;
+    SetLastError(0);
+    Sleep(milliseconds);
+    return GetLastError() ? -1 : 0;
 #else
-struct timespec req, rem;
-req.tv_sec = 0;
-req.tv_nsec = milliseconds * 1000000;
-return nanosleep(&req, &rem);
+    struct timespec req, rem;
+    req.tv_sec = 0;
+    req.tv_nsec = milliseconds * 1000000;
+    return nanosleep(&req, &rem);
 #endif
 #endif
 }
