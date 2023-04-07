@@ -21,54 +21,53 @@
 #endif
 
 #ifndef TARGET_CALC
-#   include "char_conv.h"
 #endif
 
-#include "mk72.h"
+#include "mk_common.h"
 
 /**
  * MK72Engine
  */
 
-MK72Engine::MK72Engine()
+mk_engine::mk_engine()
 {
     m_outputRequired = false;
-    m_powerState = MK72Engine_Off;
+    m_powerState = engine_power_state_t::engine_off;
 }
 
-MK72Engine::~MK72Engine()
+mk_engine::~mk_engine()
 {
 
 }
 
-bool MK72Engine::IsOutputRequired()
+bool mk_engine::is_output_required()
 {
     return m_outputRequired;
 }
 
-MK72Result MK72Engine::EndOutput()
+mk_result_t mk_engine::end_output()
 {
     m_outputRequired = false;
-    return MK_OK;
+    return mk_result_t::mk_ok;
 }
 
 
-MK72EnginePowerState MK72Engine::GetPowerState()
+engine_power_state_t mk_engine::get_power_state()
 {
     return m_powerState;
 }
 
-MK72Result MK72Engine::SetPowerState(const MK72EnginePowerState value)
+mk_result_t mk_engine::set_power_state(const engine_power_state_t value)
 {
     if (m_powerState != value)
     {
         m_powerState = value;
     }
-    return MK_OK;
+    return mk_result_t::mk_ok;
 }
 
 /**
- * Адаптеры управления памятью
+ * Memory managment adapters
  */
 
 void *mk_calloc (size_t n, size_t size)
@@ -87,33 +86,11 @@ void mk_free(void *p)
 }
 
 /**
- * Ввод-вывод для целевой платформы (калькулятор, консоль Linux, консоль Windows...)
+ * Platform I/O
  */
-
-static size_t utf8_length(const char lead)
-{
-    unsigned char x = ~((unsigned char) lead);
-    unsigned int b = 0;
-    if (x & 0xf0)
-        x >>= 4;
-    else
-        b += 4;
-    if (x & 0x0c)
-        x >>= 2;
-    else
-        b += 2;
-    if (! (x & 0x02) )
-        b++;
-    return b;
-}
-
 
 int mk_kbhit(void)
 {
-#ifdef TARGET_CALC
-    // TODO
-    return 0;
-#else
 #ifdef __linux__
     struct timeval tv;
     fd_set rdfs;
@@ -126,13 +103,8 @@ int mk_kbhit(void)
 #else
     return kbhit();
 #endif
-#endif
 }
 
-/*
- * Возвращает однобайтный код символа для ASCII (<128)
- * или 1..4-байтный код Utf-8
- */
 int mk_getchar()
 {
 #   ifdef __linux__
@@ -170,7 +142,7 @@ int mk_getchar()
 }
 
 /*
- * Чтение символа, если была нажата клавиша
+ * Read character if key pressed
  */
 int mk_getch(const bool nowait, const bool echo)
 {
@@ -231,22 +203,7 @@ int mk_printf(const char *format, ... )
     va_list args;
     va_start(args, format);
     int result = -1;
-#ifdef TARGET_CALC
-    // TODO
     printf(format, args);
-#else
-    char buf_cp1251[MAX_LINE_LEN + 1];
-    memset(buf_cp1251, 0, sizeof(buf_cp1251));
-    if ((result = vsnprintf(buf_cp1251, MAX_LINE_LEN, format, args)) > 0)
-    {
-        char buf_utf8[MAX_LINE_LEN_UTF8 + 1];
-        memset(buf_utf8, 0, sizeof(buf_utf8));
-        if (convert_windows1251_to_utf8(buf_cp1251, buf_utf8, MAX_LINE_LEN_UTF8))
-            result = printf("%s", buf_utf8);
-        else
-            result =  -1;
-    }
-#endif
     va_end(args);
     return result;
 }
@@ -255,32 +212,13 @@ char *mk_gets(char *str, int num)
 {
     char *result = str;
     memset(result, 0, num);
-#ifdef TARGET_CALC
     gets(str);
-#else
-    char buf_utf8[MAX_LINE_LEN_UTF8 + 1];
-    memset(buf_utf8, 0, MAX_LINE_LEN_UTF8 + 1);
-    if ((result = fgets(buf_utf8, MAX_LINE_LEN_UTF8, stdin)) != NULL)
-    {
-        if (convert_utf8_to_windows1251(buf_utf8, str, num))
-            result = str;
-    }
-#endif
     return result;
 }
 
 int mk_puts(const char *str)
 {
-#ifdef TARGET_CALC
-// TODO
-    return -1;
-#else
-    char buf_utf8[MAX_LINE_LEN_UTF8 + 1];
-    memset(buf_utf8, 0, sizeof(buf_utf8));
-    if (convert_windows1251_to_utf8(str, buf_utf8, MAX_LINE_LEN_UTF8))
-        return puts(buf_utf8);
-    return -1;
-#endif
+    return puts(str);
 }
 
 mk_file_result_t mk_load_file(const char *name, char *buffer, const uint32_t size)
@@ -326,7 +264,7 @@ mk_file_result_t mk_save_file(const char *name, const char *buffer, const uint32
 }
 
 /**
- * Операции со строками
+ * String ops
  */
 int mk_strcasecmp(char const *str1, char const *str2)
 {
@@ -340,7 +278,7 @@ int mk_strcasecmp(char const *str1, char const *str2)
 
 
 /**
- * Тайминг
+ * Timing
  */
 int mk_sleep(const int milliseconds)
 {
@@ -360,14 +298,4 @@ int mk_sleep(const int milliseconds)
     return nanosleep(&req, &rem);
 #endif
 #endif
-}
-
-/**
- * Полезные функции
- */
-
-uint8_t ctoui8(const char c)
-{
-    uint8_t result = (uint8_t)c - (uint8_t)('0');
-    return result;
 }

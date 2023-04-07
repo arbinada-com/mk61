@@ -1,48 +1,50 @@
 #ifndef MK61COMMANDER_H_INCLUDED
 #define MK61COMMANDER_H_INCLUDED
 
+#include <memory>
+#include <iostream>
+#include <string>
 #include "mk61emu.h"
 
-typedef enum
+enum class mk_cmd_kind_t
 {
-    mk61cmd_unknown,
-    mk61cmd_empty,
-    mk61cmd_quit,
-    mk61cmd_load,
-    mk61cmd_save,
-    mk61cmd_on,
-    mk61cmd_off,
-    mk61cmd_keys
-} mk61commander_cmd_kind_t;
+    cmd_unknown,
+    cmd_empty,
+    cmd_quit,
+    cmd_load,
+    cmd_save,
+    cmd_on,
+    cmd_off,
+    cmd_keys
+};
 
-typedef enum
+enum class mk_message_t
 {
-    mk_message_info,
-    mk_message_warn,
-    mk_message_error
-} mk_message_t;
+    msg_info,
+    msg_warn,
+    msg_error
+};
 
-typedef struct
+struct mk_parse_result
 {
-    bool parsed;
-    mk61commander_cmd_kind_t cmd_kind;
-} mk61commander_parse_result_t;
+    mk_cmd_kind_t cmd_kind = mk_cmd_kind_t::cmd_unknown;
+    bool          parsed   = false;
+};
 
-class MK61Commander
+class mk61_commander
 {
 public:
-    MK61Commander();
-    ~MK61Commander();
-    void Run();
+    mk61_commander();
+    void run();
 private:
-    MK61Emu *m_emu;
-    mk61commander_parse_result_t m_last_parse_result;
+    std::unique_ptr<mk61_emu> m_emu;
+    mk_parse_result m_last_parse_result;
+private:
+    bool get_command(char *cmdstr, int num);
+    bool input_name(char *str, size_t max_size);
     int mk_show_message(const mk_message_t message_type, const char *format, ... );
-private:
-    bool GetCommand(char *cmdstr, int num);
-    bool InputName(char *str, size_t max_size);
-    void OutputState();
-    mk61commander_parse_result_t ParseInput(const char *cmd);
+    void output_state();
+    mk_parse_result parse_input(const char *cmd);
 };
 
 #endif // MK61COMMANDER_H_INCLUDED

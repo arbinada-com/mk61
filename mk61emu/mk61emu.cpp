@@ -688,7 +688,7 @@ microprograms:
 
 const mk61_register_position_t display_symbols[16] =
 {
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', 'L', 'C', (char)L_G, (char)L_E, ' '
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', 'L', 'C', 'r', 'E', ' '
 };
 
 static uint8_t pages_addresses[15][2] =
@@ -1137,7 +1137,7 @@ char* IR2::WriteState(char *state)
  * mk61emu
  */
 
-MK61Emu::MK61Emu()
+mk61_emu::mk61_emu()
 {
     this->m_mode = mk61emu_mode_61;
     this->m_IR2_1 = NULL;
@@ -1146,27 +1146,27 @@ MK61Emu::MK61Emu()
     this->m_IK1303 = NULL;
     this->m_IK1306 = NULL;
     m_RSModeChanged = false;
-    ClearRegisters();
-    MK72Engine::SetPowerState(MK72Engine_Off);
+    clear_registers();
+    mk_engine::set_power_state(engine_power_state_t::engine_off);
 }
 
-MK61Emu::~MK61Emu()
+mk61_emu::~mk61_emu()
 {
-    SetPowerState(MK72Engine_Off);
+    set_power_state(engine_power_state_t::engine_off);
 }
 
-void MK61Emu::ClearRegisters()
+void mk61_emu::clear_registers()
 {
     int i = 0;
     for (i = 0; i < MK61EMU_REG_STACK_COUNT; i++)
-        ClearRegisterStr(m_reg_stack[i]);
+        clear_register_str(m_reg_stack[i]);
     for (i = 0; i < MK61EMU_REG_MEM_COUNT; i++)
-        ClearRegisterStr(m_reg_mem[i]);
+        clear_register_str(m_reg_mem[i]);
 }
 
-bool MK61Emu::IsRunning()
+bool mk61_emu::is_running()
 {
-    if (GetPowerState() == MK72Engine_On)
+    if (get_power_state() == engine_power_state_t::engine_on)
     {
         if (m_IK1302->comma == 11)
             return true;
@@ -1174,14 +1174,14 @@ bool MK61Emu::IsRunning()
     return false;
 }
 
-void MK61Emu::ClearRegisterStr(mk61_register_t &reg)
+void mk61_emu::clear_register_str(mk61_register_t &reg)
 {
     int len = sizeof(mk61_register_t);
     memset(reg, ' ', len - 1);
     reg[len - 1] = 0;
 }
 
-void MK61Emu::Cleanup()
+void mk61_emu::cleanup()
 {
     if (m_IR2_1 != NULL)
     {
@@ -1208,18 +1208,18 @@ void MK61Emu::Cleanup()
         delete m_IK1306;
         m_IK1306 = NULL;
     }
-    ClearRegisters();
+    clear_registers();
 }
 
-MK72Result MK61Emu::SetPowerState(const MK72EnginePowerState value)
+mk_result_t mk61_emu::set_power_state(const engine_power_state_t value)
 {
-    if (value == GetPowerState())
-        return MK_OK;
-    MK72Engine::SetPowerState(value);
+    if (value == get_power_state())
+        return mk_result_t::mk_ok;
+    mk_engine::set_power_state(value);
     switch(value)
     {
-    case MK72Engine_On:
-        Cleanup();
+    case engine_power_state_t::engine_on:
+        cleanup();
         m_angle_unit = angle_unit_radian;
         m_IR2_1 = new IR2();
         m_IR2_2 = new IR2();
@@ -1234,43 +1234,43 @@ MK72Result MK61Emu::SetPowerState(const MK72EnginePowerState value)
         m_IK1303->SetROM(&ROM.IK1303);
         if (m_IK1306 != NULL)
             m_IK1306->SetROM(&ROM.IK1306);
-        DoStep();
+        do_step();
         break;
-    case MK72Engine_Off:
-        Cleanup();
+    case engine_power_state_t::engine_off:
+        cleanup();
         break;
     }
     m_outputRequired = true;
-    return MK_OK;
+    return mk_result_t::mk_ok;
 }
 
-MK72Result MK61Emu::DoKeyPress(const int key1, const int key2)
+mk_result_t mk61_emu::do_key_press(const int key1, const int key2)
 {
-    if (GetPowerState() == MK72Engine_On)
+    if (get_power_state() == engine_power_state_t::engine_on)
     {
         if (m_IK1302 != NULL)
         {
             m_IK1302->key_x = key1;
             m_IK1302->key_y = key2;
         }
-        DoStep();
+        do_step();
         m_outputRequired = true;
     }
-    return MK_OK;
+    return mk_result_t::mk_ok;
 }
 
-bool MK61Emu::IsOutputRequired()
+bool mk61_emu::is_output_required()
 {
     if (m_RSModeChanged)
     {
         m_RSModeChanged = false;
         return m_outputRequired;
     }
-    return m_outputRequired && !IsRunning();
+    return m_outputRequired && !is_running();
 }
 
 
-void MK61Emu::Tick()
+void mk61_emu::tick()
 {
     m_IK1302->input = m_IR2_2->output;
     m_IK1302->Tick();
@@ -1290,9 +1290,9 @@ void MK61Emu::Tick()
     m_IK1302->M[((m_IK1302->mtick >> 2) + 41) % 42] = m_IR2_2->output;
 }
 
-void MK61Emu::ReadNumber(mk61_register_t &reg, uint8_t chip, unsigned char address)
+void mk61_emu::read_number(mk61_register_t &reg, uint8_t chip, unsigned char address)
 {
-    ClearRegisterStr(reg);
+    clear_register_str(reg);
     io_t *m;
     switch (chip)
     {
@@ -1312,7 +1312,7 @@ void MK61Emu::ReadNumber(mk61_register_t &reg, uint8_t chip, unsigned char addre
         m = m_IK1306->M;
         break;  /*case 5*/
     }
-    // порядок числа
+    // Exponent
     // 0123456789012
     // -1.2345678-99
     short exp_value = m[address - 3] * 10 + m[address - 6];
@@ -1336,8 +1336,8 @@ void MK61Emu::ReadNumber(mk61_register_t &reg, uint8_t chip, unsigned char addre
         digits_len++;
         i++;
     }
-    mk61_register_t coef_value;  // с запасом на разряды порядка
-    ClearRegisterStr(coef_value);
+    mk61_register_t coef_value;  // including exponent digits
+    clear_register_str(coef_value);
     coef_value[0] = (m[address - 9] == 9) ? '-' : ' ';
     bool has_point = false;
     j = 0;
@@ -1365,25 +1365,25 @@ void MK61Emu::ReadNumber(mk61_register_t &reg, uint8_t chip, unsigned char addre
     }
 }
 
-void MK61Emu::ReadAllFields(uint8_t replacement)
+void mk61_emu::read_all_fields(uint8_t replacement)
 {
     uint8_t i = 0;
     for (i = 0; i < (m_mode == mk61emu_mode_61 ? 15 : 14); i++)
         if (m_mode == mk61emu_mode_61)
-            ReadNumber(m_reg_mem[i],
+            read_number(m_reg_mem[i],
                        pages_addresses[pages_addresses_replacements_61[replacement][i]][0],
                        pages_addresses[pages_addresses_replacements_61[replacement][i]][1] - 8);
         else
-            ReadNumber(m_reg_mem[i],
+            read_number(m_reg_mem[i],
                        pages_addresses[pages_addresses_replacements_54[replacement][i]][0],
                        pages_addresses[pages_addresses_replacements_54[replacement][i]][1] - 8);
     for (i = 0; i < 5; i++)
         if (m_mode == mk61emu_mode_61)
-            ReadNumber(m_reg_stack[i],
+            read_number(m_reg_stack[i],
                        stack_addresses[stack_addresses_replacements_61[replacement][i]][0],
                        stack_addresses[stack_addresses_replacements_61[replacement][i]][1]);
         else
-            ReadNumber(m_reg_stack[i],
+            read_number(m_reg_stack[i],
                        stack_addresses[stack_addresses_replacements_54[replacement][i]][0],
                        stack_addresses[stack_addresses_replacements_54[replacement][i]][1]);
     m_prog_counter[0] = display_symbols[m_IK1302->R[program_counter_address]];
@@ -1395,9 +1395,9 @@ void MK61Emu::ReadAllFields(uint8_t replacement)
     }
 }
 
-MK72Result MK61Emu::DoStep()
+mk_result_t mk61_emu::do_step()
 {
-    bool wasRunning = IsRunning();
+    bool wasRunning = is_running();
     // Save registers state
     mk61_register_t reg_mem[MK61EMU_REG_MEM_COUNT];
     mk61_register_t reg_stack[MK61EMU_REG_STACK_COUNT];
@@ -1420,7 +1420,7 @@ MK72Result MK61Emu::DoStep()
     {
         for (i = 0; i < 42; i++)
         {
-            Tick();
+            tick();
 //            if (count > 0 && count < 10)
 //                fprintf(f, "%3d  %2d: %10d  %10d  %10d  %10d  %10d | %3d  %3d  %3d  %3d  %3d\n",
 //                        count, i,
@@ -1441,7 +1441,7 @@ MK72Result MK61Emu::DoStep()
     this->m_IK1302->key_y = 0;
 
     if (this->m_IR2_1->mtick == 84)
-        ReadAllFields(0);
+        read_all_fields(0);
 
     if (!m_outputRequired)
     {
@@ -1485,63 +1485,63 @@ MK72Result MK61Emu::DoStep()
             }
     }
 
-    m_RSModeChanged = wasRunning != IsRunning();
+    m_RSModeChanged = wasRunning != is_running();
 
-    return MK_OK;
+    return mk_result_t::mk_ok;
 }
 
-MK72Result MK61Emu::DoInput(const char* buf, size_t length)
+mk_result_t mk61_emu::do_input(const char* buf, size_t length)
 {
-    return MK_OK;
+    return mk_result_t::mk_ok;
 }
 
 
-const char* MK61Emu::GetRegStackStr(mk61emu_reg_stack_t reg)
+const char* mk61_emu::get_reg_stack_str(mk61emu_reg_stack_t reg)
 {
-    if (GetPowerState() == MK72Engine_Off)
+    if (get_power_state() == engine_power_state_t::engine_off)
         return "";
     return this->m_reg_stack[reg];
 }
 
-const char* MK61Emu::GetRegMemStr(mk61emu_reg_mem_t reg)
+const char* mk61_emu::get_reg_mem_str(mk61emu_reg_mem_t reg)
 {
-    if (GetPowerState() == MK72Engine_Off)
+    if (get_power_state() == engine_power_state_t::engine_off)
         return "";
     return this->m_reg_mem[reg];
 }
 
-angle_unit_t MK61Emu::GetAngleUnit()
+angle_unit_t mk61_emu::get_angle_unit()
 {
     return m_angle_unit;
 }
 
-void MK61Emu::SetAngleUnit(const angle_unit_t value)
+void mk61_emu::set_angle_unit(const angle_unit_t value)
 {
     m_angle_unit = value;
 }
 
 
-const char* MK61Emu::GetAngleUnitStr()
+const char* mk61_emu::get_angle_unit_str()
 {
-    if (GetPowerState() == MK72Engine_Off)
+    if (get_power_state() == engine_power_state_t::engine_off)
         return "";
     switch (this->m_angle_unit)
     {
     case angle_unit_radian:
-        return LL_R;
+        return "RAD";
     case angle_unit_grade:
-        return LL_G LL_R LL_D;
+        return "GRD";
     case angle_unit_degree:
-        return LL_G;
+        return "DEG";
     }
-    return "";
+    return "?";
 }
 
-const char* MK61Emu::GetIndicatorStr()
+const char* mk61_emu::get_indicator_str()
 {
     memset(m_indicator_str, 0, 15);
     memset(m_indicator_str, ' ', 12);
-    if (GetPowerState() == MK72Engine_Off)
+    if (get_power_state() == engine_power_state_t::engine_off)
         return m_indicator_str;
     int i = 0;
     for (i = 0; i < 9; i++)
@@ -1555,9 +1555,9 @@ const char* MK61Emu::GetIndicatorStr()
     return m_indicator_str;
 }
 
-const char* MK61Emu::GetProgCounterStr()
+const char* mk61_emu::get_prog_counter_str()
 {
-    if (GetPowerState() == MK72Engine_Off)
+    if (get_power_state() == engine_power_state_t::engine_off)
         return "";
     m_prog_counter_str[0] = m_prog_counter[0];
     m_prog_counter_str[1] = m_prog_counter[1];
@@ -1565,7 +1565,7 @@ const char* MK61Emu::GetProgCounterStr()
     return m_prog_counter_str;
 }
 
-size_t MK61Emu::GetStateSizeInBytes()
+size_t mk61_emu::get_state_size_bytes()
 {
     return
         m_IR2_1->GetStateSizeInBytes() +
@@ -1576,7 +1576,7 @@ size_t MK61Emu::GetStateSizeInBytes()
         sizeof(m_angle_unit);
 }
 
-const char* MK61Emu::GetFileResultMessage(mk_file_result_t result)
+const char* mk61_emu::get_file_result_message(mk_file_result_t result)
 {
     switch (result)
     {
@@ -1592,10 +1592,10 @@ const char* MK61Emu::GetFileResultMessage(mk_file_result_t result)
     return MSG_MK_UNKNOWN_RESULT;
 }
 
-bool MK61Emu::LoadState(const char *name, mk61emu_result_t *result)
+bool mk61_emu::load_state(const char *name, mk61emu_result_t *result)
 {
     result->succeeded = false;
-    const size_t size = GetStateSizeInBytes();
+    const size_t size = get_state_size_bytes();
     char *state = (char*) mk_malloc(size);
     if (state == NULL)
     {
@@ -1606,11 +1606,11 @@ bool MK61Emu::LoadState(const char *name, mk61emu_result_t *result)
     char *p = state;
     mk_file_result_t file_result = mk_load_file(name, state, size);
     if (file_result != mk_file_ok)
-        strcpy(result->message, GetFileResultMessage(file_result));
+        strcpy(result->message, get_file_result_message(file_result));
     else
     {
-        SetPowerState(MK72Engine_Off);
-        SetPowerState(MK72Engine_On);
+        set_power_state(engine_power_state_t::engine_off);
+        set_power_state(engine_power_state_t::engine_on);
         p = m_IR2_1->ReadState(p);
         p = m_IR2_2->ReadState(p);
         p = m_IK1302->ReadState(p);
@@ -1626,15 +1626,15 @@ bool MK61Emu::LoadState(const char *name, mk61emu_result_t *result)
     return result->succeeded;
 }
 
-bool MK61Emu::SaveState(const char *name, mk61emu_result_t *result)
+bool mk61_emu::save_state(const char *name, mk61emu_result_t *result)
 {
     result->succeeded = false;
-    if (GetPowerState() == MK72Engine_Off)
+    if (get_power_state() == engine_power_state_t::engine_off)
     {
         strcpy(result->message, MSG_MK_DEVICE_IS_OFF);
         return result->succeeded;
     }
-    const size_t size = GetStateSizeInBytes();
+    const size_t size = get_state_size_bytes();
     char *state = (char*) mk_malloc(size);
     if (state == NULL)
     {
@@ -1656,7 +1656,7 @@ bool MK61Emu::SaveState(const char *name, mk61emu_result_t *result)
     if (file_result == mk_file_ok)
         result->succeeded = true;
     else
-        strcpy(result->message, GetFileResultMessage(file_result));
+        strcpy(result->message, get_file_result_message(file_result));
     mk_free(state);
     return result->succeeded;
 }

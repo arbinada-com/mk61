@@ -2,7 +2,7 @@
 
 int main()
 {
-    MK61Commander cmd;
-    cmd.Run();
+    mk61_commander cmd;
+    cmd.run();
     return EXIT_SUCCESS;
 }

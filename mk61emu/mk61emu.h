@@ -4,19 +4,19 @@
 #define MK61EMU_VERSION_MAJOR 1
 #define MK61EMU_VERSION_MINOR 1
 
-#include "mk72.h"
+#include "mk_common.h"
 
-typedef uint32_t microinstruction_t; // 4-байтные микрокоманды
-typedef uint32_t instruction_t;  // 4-байтные команды
+typedef uint32_t microinstruction_t; // 4-byte microinstructions
+typedef uint32_t instruction_t;      // 4-byte instructions
 typedef uint8_t io_t;
 typedef uint8_t mtick_t;
 typedef uint16_t tick_t;
 
 typedef struct
 {
-    microinstruction_t microinstructions[68]; // микрокоманды
-    instruction_t instructions[256];     // команды
-    uint8_t microprograms[1152];   // микропрограммы (синхропрограммы - последовательности микрокоманд)
+    microinstruction_t microinstructions[68];
+    instruction_t instructions[256];
+    uint8_t microprograms[1152];
 } IK13_ROM;
 
 /**
@@ -35,11 +35,11 @@ typedef struct
 const uint8_t IK13_MTICK_COUNT = 42;
 
 /**
- * @brief The IK13 chip
+ * The IK13 chip
  */
 class IK13
 {
-    friend class MK61Emu;
+    friend class mk61_emu;
 public:
     IK13();
 private:
@@ -69,7 +69,7 @@ const uint8_t IR2_MTICK_COUNT = 252;
 
 class IR2
 {
-    friend class MK61Emu;
+    friend class mk61_emu;
 public:
     IR2();
 private:
@@ -132,9 +132,9 @@ typedef enum
 
 typedef enum
 {
-    angle_unit_radian = 10, // Р - радианы
-    angle_unit_degree = 11, // Г - градусы
-    angle_unit_grade  = 12  // ГРД - грады
+    angle_unit_radian = 10,
+    angle_unit_degree = 11,
+    angle_unit_grade  = 12
 } angle_unit_t;
 
 typedef struct
@@ -144,37 +144,37 @@ typedef struct
 } mk61emu_result_t;
 
 /**
- * @brief The MK61 emulator class
+ * The MK61 emulator class
  */
-class MK61Emu : public MK72Engine
+class mk61_emu : public mk_engine
 {
 public:
-    MK61Emu();
-    virtual ~MK61Emu();
-    const char* GetRegStackStr(mk61emu_reg_stack_t reg);
-    angle_unit_t GetAngleUnit();
-    void SetAngleUnit(const angle_unit_t value);
-    const char* GetAngleUnitStr();
-    const char* GetIndicatorStr();
-    const char* GetProgCounterStr();
-    const char* GetRegMemStr(mk61emu_reg_mem_t reg);
-    virtual MK72Result DoStep();
-    virtual MK72Result DoInput(const char* buf, size_t length);
-    virtual MK72Result DoKeyPress(const int key1, const int key2);
-    virtual bool IsOutputRequired();
-    virtual MK72Result SetPowerState(const MK72EnginePowerState value);
-    bool IsRunning();
-    bool LoadState(const char *name, mk61emu_result_t *result);
-    bool SaveState(const char *name, mk61emu_result_t *result);
+    mk61_emu();
+    virtual ~mk61_emu();
+    const char* get_reg_stack_str(mk61emu_reg_stack_t reg);
+    angle_unit_t get_angle_unit();
+    void set_angle_unit(const angle_unit_t value);
+    const char* get_angle_unit_str();
+    const char* get_indicator_str();
+    const char* get_prog_counter_str();
+    const char* get_reg_mem_str(mk61emu_reg_mem_t reg);
+    mk_result_t do_step() override;
+    virtual mk_result_t do_input(const char* buf, size_t length);
+    virtual mk_result_t do_key_press(const int key1, const int key2);
+    virtual bool is_output_required();
+    virtual mk_result_t set_power_state(const engine_power_state_t value);
+    bool is_running();
+    bool load_state(const char *name, mk61emu_result_t *result);
+    bool save_state(const char *name, mk61emu_result_t *result);
 private:
-    void ClearRegisters();
-    static void ClearRegisterStr(mk61_register_t &reg);
-    void Cleanup();
-    static const char* GetFileResultMessage(mk_file_result_t result);
-    size_t GetStateSizeInBytes();
-    void ReadAllFields(uint8_t replacement);
-    void ReadNumber(mk61_register_t &reg, uint8_t chip, unsigned char address);
-    void Tick();
+    void clear_registers();
+    static void clear_register_str(mk61_register_t &reg);
+    void cleanup();
+    static const char* get_file_result_message(mk_file_result_t result);
+    size_t get_state_size_bytes();
+    void read_all_fields(uint8_t replacement);
+    void read_number(mk61_register_t &reg, uint8_t chip, unsigned char address);
+    void tick();
 private:
     mk61emu_mode m_mode;
     angle_unit_t m_angle_unit;

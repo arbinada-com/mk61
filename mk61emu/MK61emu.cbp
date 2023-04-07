@@ -37,8 +37,6 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="char_conv.cpp" />
-		<Unit filename="char_conv.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="mk61commander.cpp" />
 		<Unit filename="mk61commander.h" />
@@ -46,8 +44,6 @@
 		<Unit filename="mk61emu.h" />
 		<Unit filename="mk72.cpp" />
 		<Unit filename="mk72.h" />
-		<Unit filename="mk72r.cpp" />
-		<Unit filename="mk72r.h" />
 		<Extensions />
 	</Project>
 </CodeBlocks_project_file>
