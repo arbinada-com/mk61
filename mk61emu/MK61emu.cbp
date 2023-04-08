@@ -42,8 +42,8 @@
 		<Unit filename="mk61commander.h" />
 		<Unit filename="mk61emu.cpp" />
 		<Unit filename="mk61emu.h" />
-		<Unit filename="mk72.cpp" />
-		<Unit filename="mk72.h" />
+		<Unit filename="mk_common.cpp" />
+		<Unit filename="mk_common.h" />
 		<Extensions />
 	</Project>
 </CodeBlocks_project_file>
