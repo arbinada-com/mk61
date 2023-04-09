@@ -4,6 +4,7 @@
 #define MK61EMU_VERSION_MAJOR 1
 #define MK61EMU_VERSION_MINOR 1
 
+#include <iostream>
 #include "mk_common.h"
 
 typedef uint32_t microinstruction_t; // 4-byte microinstructions
@@ -12,22 +13,22 @@ typedef uint8_t io_t;
 typedef uint8_t mtick_t;
 typedef uint16_t tick_t;
 
-typedef struct
+struct IK13_ROM
 {
     microinstruction_t microinstructions[68];
-    instruction_t instructions[256];
-    uint8_t microprograms[1152];
-} IK13_ROM;
+    instruction_t      instructions[256];
+    uint8_t            microprograms[1152];
+};
 
 /**
  * mk61ROM
  */
-typedef struct
+struct mk61ROM_t
 {
     IK13_ROM IK1302;
     IK13_ROM IK1303;
     IK13_ROM IK1306;
-} mk61ROM_t;
+};
 
 /**
  * IK13
@@ -43,11 +44,10 @@ class IK13
 public:
     IK13();
 private:
-    uint16_t GetStateSizeInBytes();
-    char* ReadState(char *state);
-    char* WriteState(char *state);
-    void SetROM(const IK13_ROM *ROM);
-    void Tick();
+    void read_state(std::istream& data);
+    void qrite_state(std::ostream& data);
+    void set_ROM(const IK13_ROM *ROM);
+    void tick();
 private:
     const IK13_ROM *ROM;
     io_t R[IK13_MTICK_COUNT];
@@ -73,10 +73,9 @@ class IR2
 public:
     IR2();
 private:
-    size_t GetStateSizeInBytes();
-    char* ReadState(char *state);
-    char* WriteState(char *state);
-    void Tick();
+    void read_state(std::istream& data);
+    void write_state(std::ostream& data);
+    void tick();
 private:
     io_t M[IR2_MTICK_COUNT];
     mtick_t mtick;
@@ -84,34 +83,31 @@ private:
     io_t output;
 };
 
-extern IR2 *IR2_create();
-extern void IR2_free(IR2 *self);
-
 /**
  * Chipset MK61
  */
-typedef enum
+enum class mk61emu_mode_t
 {
-    mk61emu_mode_61,
-    mk61emu_mode_54
-} mk61emu_mode;
+    mode_61,
+    mode_54
+};
 
 typedef char mk61_register_position_t;
 const int mk61_register_positions_count = 14;
 typedef mk61_register_position_t mk61_register_t[mk61_register_positions_count];
 
 const uint8_t MK61EMU_REG_STACK_COUNT = 5;
-typedef enum
+enum class mk61emu_reg_stack_t : uint8_t
 {
-    mk61emu_RX1 = 0,
-    mk61emu_RX  = 1,
-    mk61emu_RY  = 2,
-    mk61emu_RZ  = 3,
-    mk61emu_RT  = 4
-} mk61emu_reg_stack_t;
+    RX1 = 0,
+    RX  = 1,
+    RY  = 2,
+    RZ  = 3,
+    RT  = 4
+};
 
 const uint8_t MK61EMU_REG_MEM_COUNT = 15;
-typedef enum
+enum class mk61emu_reg_mem_t : uint8_t
 {
     mk61emu_R0 = 0,
     mk61emu_R1 = 1,
@@ -128,20 +124,20 @@ typedef enum
     mk61emu_RC = 12,
     mk61emu_RD = 13,
     mk61emu_RE = 14
-} mk61emu_reg_mem_t;
+};
 
-typedef enum
+enum class angle_unit_t : int8_t
 {
-    angle_unit_radian = 10,
-    angle_unit_degree = 11,
-    angle_unit_grade  = 12
-} angle_unit_t;
+    radian = 10,
+    degree = 11,
+    grade  = 12
+};
 
-typedef struct
+struct mk61emu_result
 {
     bool succeeded;
-    char message[128];
-} mk61emu_result_t;
+    std::string message;
+};
 
 /**
  * The MK61 emulator class
@@ -164,19 +160,17 @@ public:
     virtual bool is_output_required();
     virtual mk_result_t set_power_state(const engine_power_state_t value);
     bool is_running();
-    bool load_state(const char *name, mk61emu_result_t *result);
-    bool save_state(const char *name, mk61emu_result_t *result);
+    void get_state(std::ostream& data);
+    void set_state(std::istream& data);
 private:
     void clear_registers();
     static void clear_register_str(mk61_register_t &reg);
     void cleanup();
-    static const char* get_file_result_message(mk_file_result_t result);
-    size_t get_state_size_bytes();
     void read_all_fields(uint8_t replacement);
     void read_number(mk61_register_t &reg, uint8_t chip, unsigned char address);
     void tick();
 private:
-    mk61emu_mode m_mode;
+    mk61emu_mode_t m_mode;
     angle_unit_t m_angle_unit;
     IR2 *m_IR2_1, *m_IR2_2;
     IK13 *m_IK1302, *m_IK1303, *m_IK1306;

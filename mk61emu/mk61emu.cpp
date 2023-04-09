@@ -1,7 +1,3 @@
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include "mk61emu.h"
 
 static angle_unit_t CharToAngleUnit(const char c)
@@ -9,21 +5,35 @@ static angle_unit_t CharToAngleUnit(const char c)
     switch (c)
     {
     case 10:
-        return angle_unit_radian;
+        return angle_unit_t::radian;
     case 11:
-        return angle_unit_degree;
+        return angle_unit_t::degree;
     default:
-        return angle_unit_grade;
+        return angle_unit_t::grade;
     }
+}
 
+std::istream& operator>>(std::istream& input, angle_unit_t& data)
+{
+    int value;
+    input >> value;
+    data = static_cast<angle_unit_t>(value);
+    return input;
+}
+
+std::ostream& operator<<(std::ostream& output, const angle_unit_t data)
+{
+    int value = static_cast<int>(data);
+    output << value;
+    return output;
 }
 
 
-const mk61ROM_t ROM =
+const mk61ROM_t ROM = 
 {
-IK1302:
+.IK1302 =
     {
-microinstructions:
+.microinstructions =
         {
             0x0000000, 0x0800001, 0x0A00820, 0x0040020, // 1
             0x0A03120, 0x0203081, 0x0A00181, 0x0803800,
@@ -43,7 +53,7 @@ microinstructions:
             0x0840801, 0x0840020, 0x0013081, 0x0010801,
             0x0818180, 0x0800180, 0x0A00081, 0x0800001  //17
         },
-instructions:
+.instructions =
         {
             0x00204E4E, 0x00117360, 0x00114840, 0x01040240, // 1
             0x00164040, 0x001B3240, 0x00064640, 0x015B4013,
@@ -110,7 +120,7 @@ instructions:
             0x01015C5B, 0x00090F40, 0x00005E5D, 0x010B3613,
             0x00144740, 0x01176806, 0x000A5A5A, 0x01D3200D  // 64
         },
-microprograms:
+.microprograms =
         {
             0x00, 0x00, 0x00, 0x10, 0x03, 0x1D, 0x00, 0x07, 0x1E, // 1
             0x10, 0x03, 0x1C, 0x0B, 0x07, 0x0C, 0x1E, 0x00, 0x00,
@@ -242,9 +252,9 @@ microprograms:
             0x03, 0x1E, 0x0F, 0x26, 0x0A, 0x02, 0x26, 0x3E, 0x08 // 128
         }
     },
-IK1303:
+.IK1303 = 
     {
-microinstructions:
+.microinstructions =
         {
             0x0000000, 0x0800001, 0x0040020, 0x1440090, // 1
             0x0A00081, 0x1000000, 0x1400020, 0x0800008,
@@ -264,7 +274,7 @@ microinstructions:
             0x0858001, 0x0040020, 0x3200209, 0x08000C0,
             0x4000020, 0x0600081, 0x1000000, 0x1000180  // 17
         },
-instructions:
+.instructions =
         {
             0x00386050, 0x005B3F3E, 0x000F5970, 0x00152470, // 1
             0x000C3D50, 0x0011312F, 0x005B4544, 0x00165050,
@@ -331,7 +341,7 @@ instructions:
             0x006E136E, 0x0031602E, 0x01085D1A, 0x010F6F50,
             0x0017506A, 0x00FB5020, 0x000A3C47, 0x00174D50  // 64
         },
-microprograms:
+.microprograms =
         {
             0x2C, 0x23, 0x00, 0x2C, 0x23, 0x00, 0x2C, 0x23, 0x30, // 1
             0x31, 0x32, 0x00, 0x31, 0x32, 0x12, 0x31, 0x32, 0x30,
@@ -463,9 +473,9 @@ microprograms:
             0x06, 0x0C, 0x0C, 0x00, 0x00, 0x12, 0x24, 0x1D, 0x1D  // 128
         }
     },
-IK1306:
+.IK1306 =
     {
-microinstructions:
+.microinstructions =
         {
             0x0000000, 0x0800008, 0x0040020, 0x0800001, // 1
             0x0800021, 0x0080020, 0x0A00028, 0x0040100,
@@ -485,7 +495,7 @@ microinstructions:
             0x0210801, 0x0210081, 0x0010000, 0x0200090,
             0x0210081, 0x0212801, 0x0A01020, 0x0A01020  // 17
         },
-instructions:
+.instructions =
         {
             0x0070000, 0x0060040, 0x0076A2F, 0x00B4C00, // 1
             0x0090000, 0x00B4D00, 0x0090000, 0x0055300,
@@ -552,7 +562,7 @@ instructions:
             0x0070023, 0x0070024, 0x0072F29, 0x0070041,
             0x1060040, 0x0074900, 0x0075F5F, 0x0094A4A  // 64
         },
-microprograms:
+.microprograms =
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 1
             0x2C, 0x2A, 0x27, 0x13, 0x2B, 0x27, 0x13, 0x2B, 0x27,
@@ -790,7 +800,7 @@ IK13::IK13()
     comma = 0;
 }
 
-void IK13::SetROM(const IK13_ROM *ROM)
+void IK13::set_ROM(const IK13_ROM *ROM)
 {
     this->ROM = ROM;
 }
@@ -806,7 +816,7 @@ static mtick_t J[] =
     0, 1, 2, 3, 4, 5
 };
 
-void IK13::Tick()
+void IK13::tick()
 {
     mtick_t signal_I = mtick >> 2;
     mtick_t signal_D = mtick / 12 | 0;
@@ -996,87 +1006,56 @@ void IK13::Tick()
         mtick = 0;
 }
 
-char* IK13::ReadState(char *state)
+void IK13::read_state(std::istream& data)
 {
-    if (state == NULL)
-        return NULL;
-    uint16_t i, p = 0;
-    for (i = 0; i < sizeof(M); i++)
-        M[i] = state[p++];
-    for (i = 0; i < sizeof(R); i++)
-        R[i] = state[p++];
-    for (i = 0; i < sizeof(ST); i++)
-        ST[i] = state[p++];
-    S                = state[p++];
-    S1               = state[p++];
-    L                = state[p++];
-    T                = state[p++];
-    P                = state[p++];
-    mtick            = state[p++];
-    microinstruction = state[p++];
-    key_x            = state[p++];
-    key_y            = state[p++];
-    comma            = state[p++];
-    input            = state[p++];
-    output           = state[p++];
-    AMK              = state[p++];
-    ASP              = state[p++];
-    AK               = state[p++];
-    MOD              = state[p++];
-    return state + p;
+    for (uint16_t i = 0; i < sizeof(M); i++)
+        data >> M[i];
+    for (uint16_t i = 0; i < sizeof(R); i++)
+        data >> R[i];
+    for (uint16_t i = 0; i < sizeof(ST); i++)
+        data >> ST[i];
+    data >> S;
+    data >> S1;
+    data >> L;
+    data >> T;
+    data >> P;
+    data >> mtick;
+    data >> microinstruction;
+    data >> key_x;
+    data >> key_y;
+    data >> comma;
+    data >> input;
+    data >> output;
+    data >> AMK;
+    data >> ASP;
+    data >> AK;
+    data >> MOD;
 }
 
-char* IK13::WriteState(char *state)
+void IK13::qrite_state(std::ostream& data)
 {
-    if (state == NULL)
-        return state;
-    uint16_t i, p = 0;
-    for (i = 0; i < sizeof(M); i++)
-        state[p++] = M[i];
-    for (i = 0; i < sizeof(R); i++)
-        state[p++] = R[i];
-    for (i = 0; i < sizeof(ST); i++)
-        state[p++] = ST[i];
-    state[p++] = S;
-    state[p++] = S1;
-    state[p++] = L;
-    state[p++] = T;
-    state[p++] = P;
-    state[p++] = mtick;
-    state[p++] = microinstruction;
-    state[p++] = key_x;
-    state[p++] = key_y;
-    state[p++] = comma;
-    state[p++] = input;
-    state[p++] = output;
-    state[p++] = AMK;
-    state[p++] = ASP;
-    state[p++] = AK;
-    state[p++] = MOD;
-    return state + p;
-}
-
-uint16_t IK13::GetStateSizeInBytes()
-{
-    return sizeof(M) +
-           sizeof(R) +
-           sizeof(ST) +
-           sizeof(S) +
-           sizeof(S1) +
-           sizeof(L) +
-           sizeof(T) +
-           sizeof(P) +
-           sizeof(mtick) +
-           sizeof(microinstruction) +
-           sizeof(key_x) +
-           sizeof(key_y) +
-           sizeof(comma) +
-           sizeof(input) +
-           sizeof(output) +
-           sizeof(AMK) +
-           sizeof(ASP) +
-           sizeof(AK) +
-           sizeof(MOD);
+    for (uint16_t i = 0; i < sizeof(M); i++)
+        data << M[i];
+    for (uint16_t i = 0; i < sizeof(R); i++)
+        data << R[i];
+    for (uint16_t i = 0; i < sizeof(ST); i++)
+        data << ST[i];
+    data << S;
+    data << S1;
+    data << L;
+    data << T;
+    data << P;
+    data << mtick;
+    data << microinstruction;
+    data << key_x;
+    data << key_y;
+    data << comma;
+    data << input;
+    data << output;
+    data << AMK;
+    data << ASP;
+    data << AK;
+    data << MOD;
 }
 
 /**
@@ -1090,7 +1069,7 @@ IR2::IR2()
     memset(M, 0, sizeof(M));
 }
 
-void IR2::Tick()
+void IR2::tick()
 {
     output = M[mtick];
     M[mtick] = input;
@@ -1099,38 +1078,22 @@ void IR2::Tick()
         mtick = 0;
 }
 
-size_t IR2::GetStateSizeInBytes()
+void IR2::read_state(std::istream& data)
 {
-    return sizeof(M) +
-           sizeof(input) +
-           sizeof(output) +
-           sizeof(mtick);
+    for (uint16_t i = 0; i < IR2_MTICK_COUNT; i++)
+        data >> M[i];
+    data >> input;
+    data >> output;
+    data >> mtick;
 }
 
-char* IR2::ReadState(char *state)
+void IR2::write_state(std::ostream& data)
 {
-    if (state == NULL)
-        return NULL;
-    uint16_t i, p = 0;
-    for (i = 0; i < IR2_MTICK_COUNT; i++)
-        M[i] = state[p++];
-    input  = state[p++];
-    output = state[p++];
-    mtick  = state[p++];
-    return state + p;
-}
-
-char* IR2::WriteState(char *state)
-{
-    if (state == NULL)
-        return state;
-    uint16_t i, p = 0;
-    for (i = 0; i < IR2_MTICK_COUNT; i++)
-        state[p++] = M[i];
-    state[p++] = input;
-    state[p++] = output;
-    state[p++] = mtick;
-    return state + p;
+    for (uint16_t i = 0; i < IR2_MTICK_COUNT; i++)
+        data << M[i];
+    data << input;
+    data << output;
+    data << mtick;
 }
 
 /**
@@ -1139,7 +1102,7 @@ char* IR2::WriteState(char *state)
 
 mk61_emu::mk61_emu()
 {
-    this->m_mode = mk61emu_mode_61;
+    this->m_mode = mk61emu_mode_t::mode_61;
     this->m_IR2_1 = NULL;
     this->m_IR2_2 = NULL;
     this->m_IK1302 = NULL;
@@ -1220,20 +1183,20 @@ mk_result_t mk61_emu::set_power_state(const engine_power_state_t value)
     {
     case engine_power_state_t::engine_on:
         cleanup();
-        m_angle_unit = angle_unit_radian;
+        m_angle_unit = angle_unit_t::radian;
         m_IR2_1 = new IR2();
         m_IR2_2 = new IR2();
         m_IK1302 = new IK13();
         m_IK1303 = new IK13();
-        if (m_mode == mk61emu_mode_61)
+        if (m_mode == mk61emu_mode_t::mode_61)
             m_IK1306 = new IK13();
         else
             m_IK1306 = NULL;
         // copy ROMs
-        m_IK1302->SetROM(&ROM.IK1302);
-        m_IK1303->SetROM(&ROM.IK1303);
+        m_IK1302->set_ROM(&ROM.IK1302);
+        m_IK1303->set_ROM(&ROM.IK1303);
         if (m_IK1306 != NULL)
-            m_IK1306->SetROM(&ROM.IK1306);
+            m_IK1306->set_ROM(&ROM.IK1306);
         do_step();
         break;
     case engine_power_state_t::engine_off:
@@ -1273,20 +1236,20 @@ bool mk61_emu::is_output_required()
 void mk61_emu::tick()
 {
     m_IK1302->input = m_IR2_2->output;
-    m_IK1302->Tick();
+    m_IK1302->tick();
     m_IK1303->input = m_IK1302->output;
-    m_IK1303->Tick();
-    if (m_mode == mk61emu_mode_61)
+    m_IK1303->tick();
+    if (m_mode == mk61emu_mode_t::mode_61)
     {
         m_IK1306->input = m_IK1303->output;
-        m_IK1306->Tick();
+        m_IK1306->tick();
         m_IR2_1->input = m_IK1306->output;
     }
     else
         m_IR2_1->input = m_IK1303->output;
-    m_IR2_1->Tick();
+    m_IR2_1->tick();
     m_IR2_2->input = m_IR2_1->output;
-    m_IR2_2->Tick();
+    m_IR2_2->tick();
     m_IK1302->M[((m_IK1302->mtick >> 2) + 41) % 42] = m_IR2_2->output;
 }
 
@@ -1368,8 +1331,8 @@ void mk61_emu::read_number(mk61_register_t &reg, uint8_t chip, unsigned char add
 void mk61_emu::read_all_fields(uint8_t replacement)
 {
     uint8_t i = 0;
-    for (i = 0; i < (m_mode == mk61emu_mode_61 ? 15 : 14); i++)
-        if (m_mode == mk61emu_mode_61)
+    for (i = 0; i < (m_mode == mk61emu_mode_t::mode_61 ? 15 : 14); i++)
+        if (m_mode == mk61emu_mode_t::mode_61)
             read_number(m_reg_mem[i],
                        pages_addresses[pages_addresses_replacements_61[replacement][i]][0],
                        pages_addresses[pages_addresses_replacements_61[replacement][i]][1] - 8);
@@ -1378,7 +1341,7 @@ void mk61_emu::read_all_fields(uint8_t replacement)
                        pages_addresses[pages_addresses_replacements_54[replacement][i]][0],
                        pages_addresses[pages_addresses_replacements_54[replacement][i]][1] - 8);
     for (i = 0; i < 5; i++)
-        if (m_mode == mk61emu_mode_61)
+        if (m_mode == mk61emu_mode_t::mode_61)
             read_number(m_reg_stack[i],
                        stack_addresses[stack_addresses_replacements_61[replacement][i]][0],
                        stack_addresses[stack_addresses_replacements_61[replacement][i]][1]);
@@ -1405,7 +1368,7 @@ mk_result_t mk61_emu::do_step()
     int i, j = 0;
     if (!m_outputRequired)
     {
-        for (i = 0; i < (m_mode == mk61emu_mode_61 ? 15 : 14); i++)
+        for (i = 0; i < (m_mode == mk61emu_mode_t::mode_61 ? 15 : 14); i++)
             memcpy(reg_mem[0], m_reg_mem[0], sizeof(m_reg_mem));
         for (i = 0; i < 5; i++)
             memcpy(reg_stack[0], m_reg_stack[0], sizeof(m_reg_stack));
@@ -1414,7 +1377,7 @@ mk_result_t mk61_emu::do_step()
     }
 
     this->m_IK1303->key_y = 1;
-    this->m_IK1303->key_x = this->m_angle_unit;
+    this->m_IK1303->key_x = static_cast<int8_t>(m_angle_unit);
 //    FILE *f = fopen("trace_c.txt", "w");
     for (int count = 1; count <= 560; count++)
     {
@@ -1445,7 +1408,7 @@ mk_result_t mk61_emu::do_step()
 
     if (!m_outputRequired)
     {
-        for (i = 0; i < (m_mode == mk61emu_mode_61 ? 15 : 14); i++)
+        for (i = 0; i < (m_mode == mk61emu_mode_t::mode_61 ? 15 : 14); i++)
         {
             for (j = 0; j < mk61_register_positions_count; j++)
             {
@@ -1500,14 +1463,14 @@ const char* mk61_emu::get_reg_stack_str(mk61emu_reg_stack_t reg)
 {
     if (get_power_state() == engine_power_state_t::engine_off)
         return "";
-    return this->m_reg_stack[reg];
+    return this->m_reg_stack[static_cast<int>(reg)];
 }
 
 const char* mk61_emu::get_reg_mem_str(mk61emu_reg_mem_t reg)
 {
     if (get_power_state() == engine_power_state_t::engine_off)
         return "";
-    return this->m_reg_mem[reg];
+    return m_reg_mem[static_cast<int>(reg)];
 }
 
 angle_unit_t mk61_emu::get_angle_unit()
@@ -1527,11 +1490,11 @@ const char* mk61_emu::get_angle_unit_str()
         return "";
     switch (this->m_angle_unit)
     {
-    case angle_unit_radian:
+    case angle_unit_t::radian:
         return "RAD";
-    case angle_unit_grade:
+    case angle_unit_t::grade:
         return "GRD";
-    case angle_unit_degree:
+    case angle_unit_t::degree:
         return "DEG";
     }
     return "?";
@@ -1565,98 +1528,28 @@ const char* mk61_emu::get_prog_counter_str()
     return m_prog_counter_str;
 }
 
-size_t mk61_emu::get_state_size_bytes()
+void mk61_emu::set_state(std::istream& data)
 {
-    return
-        m_IR2_1->GetStateSizeInBytes() +
-        m_IR2_2->GetStateSizeInBytes() +
-        m_IK1302->GetStateSizeInBytes() +
-        m_IK1303->GetStateSizeInBytes() +
-        m_IK1306->GetStateSizeInBytes() +
-        sizeof(m_angle_unit);
+    set_power_state(engine_power_state_t::engine_off);
+    set_power_state(engine_power_state_t::engine_on);
+    m_IR2_1->read_state(data);
+    m_IR2_2->read_state(data);
+    m_IK1302->read_state(data);
+    m_IK1303->read_state(data);
+    data >> m_angle_unit;
+    if (m_IK1306 != NULL)
+        m_IK1306->read_state(data);
 }
 
-const char* mk61_emu::get_file_result_message(mk_file_result_t result)
+void mk61_emu::get_state(std::ostream& data)
 {
-    switch (result)
-    {
-    case mk_file_ok:
-        return MSG_MK_OK;
-    case mk_file_open_error:
-        return MSG_MK_FILE_ERROR;
-    case mk_file_read_error:
-        return MSG_MK_FILE_READ_ERROR;
-    case mk_file_write_error:
-        return MSG_MK_FILE_WRITE_ERROR;
-    }
-    return MSG_MK_UNKNOWN_RESULT;
-}
-
-bool mk61_emu::load_state(const char *name, mk61emu_result_t *result)
-{
-    result->succeeded = false;
-    const size_t size = get_state_size_bytes();
-    char *state = (char*) mk_malloc(size);
-    if (state == NULL)
-    {
-        strcpy(result->message, MSG_MK_NOT_ENOUGH_MEMORY);
-        return result->succeeded;
-    }
-    memset(state, 0, size);
-    char *p = state;
-    mk_file_result_t file_result = mk_load_file(name, state, size);
-    if (file_result != mk_file_ok)
-        strcpy(result->message, get_file_result_message(file_result));
-    else
-    {
-        set_power_state(engine_power_state_t::engine_off);
-        set_power_state(engine_power_state_t::engine_on);
-        p = m_IR2_1->ReadState(p);
-        p = m_IR2_2->ReadState(p);
-        p = m_IK1302->ReadState(p);
-        p = m_IK1303->ReadState(p);
-        if (this->m_IK1306 != NULL)
-            p = m_IK1306->ReadState(p);
-        else
-            p += m_IK1306->GetStateSizeInBytes();
-        this->m_angle_unit = CharToAngleUnit(*p++);
-        result->succeeded = true;
-    }
-    mk_free(state);
-    return result->succeeded;
-}
-
-bool mk61_emu::save_state(const char *name, mk61emu_result_t *result)
-{
-    result->succeeded = false;
     if (get_power_state() == engine_power_state_t::engine_off)
-    {
-        strcpy(result->message, MSG_MK_DEVICE_IS_OFF);
-        return result->succeeded;
-    }
-    const size_t size = get_state_size_bytes();
-    char *state = (char*) mk_malloc(size);
-    if (state == NULL)
-    {
-        strcpy(result->message, MSG_MK_NOT_ENOUGH_MEMORY);
-        return result->succeeded;
-    }
-    memset(state, 0, size);
-    char *p = state;
-    p = m_IR2_1->WriteState(p);
-    p = m_IR2_2->WriteState(p);
-    p = m_IK1302->WriteState(p);
-    p = m_IK1303->WriteState(p);
+        return;
+    m_IR2_1->write_state(data);
+    m_IR2_2->write_state(data);
+    m_IK1302->qrite_state(data);
+    m_IK1303->qrite_state(data);
+    data << m_angle_unit;
     if (this->m_IK1306 != NULL)
-        p = m_IK1306->WriteState(p);
-    else
-        p += m_IK1306->GetStateSizeInBytes();
-    *p++ = this->m_angle_unit;
-    mk_file_result_t file_result = mk_save_file(name, state, size);
-    if (file_result == mk_file_ok)
-        result->succeeded = true;
-    else
-        strcpy(result->message, get_file_result_message(file_result));
-    mk_free(state);
-    return result->succeeded;
+        m_IK1306->qrite_state(data);
 }

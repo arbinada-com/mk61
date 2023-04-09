@@ -40,11 +40,17 @@ private:
     std::unique_ptr<mk61_emu> m_emu;
     mk_parse_result m_last_parse_result;
 private:
-    bool get_command(char *cmdstr, int num);
-    bool input_name(char *str, size_t max_size);
-    int mk_show_message(const mk_message_t message_type, const char *format, ... );
+    void clear_display();
+    void output_display();
     void output_state();
-    mk_parse_result parse_input(const char *cmd);
+private:
+    int mk_kbhit(void);
+    int mk_getch(const bool nowait, const bool echo);
+    bool get_command(std::string& cmd);
+    void mk_show_message(const mk_message_t message_type, const std::string message);
+    mk_parse_result parse_input(const std::string& cmd);
+    void load_state(const std::string& filename);
+    void save_state(const std::string& filename);
 };
 
 #endif // MK61COMMANDER_H_INCLUDED

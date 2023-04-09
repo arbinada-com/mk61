@@ -1,10 +1,17 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdarg.h>
+#include <fstream>
+#include <algorithm>
+#include <thread>
+#include <chrono>
+#include <ctime>
 
-#ifndef TARGET_CALC
-#include <time.h>
+#ifdef _WIN32
+#    include <windows.h>
+#    include <conio.h>
+#endif
+#ifdef __unix__
+#    include <termios.h>
+#    include <unistd.h>
+#    include <stdio.h>
 #endif
 
 #include "mk_common.h"
@@ -16,31 +23,28 @@ mk61_commander::mk61_commander()
 
 void mk61_commander::run()
 {
-    const char file_ext[] = ".mk61";
-    char cmd[MAX_LINE_LEN + 1];
-    memset(cmd, 0, MAX_LINE_LEN + 1);
-    time_t now, last_time;
-    time(&last_time);
+    const std::string file_ext = ".mk61";
+    std::string cmd;
+    std::time_t now, last_time;
+    std::time(&last_time);
     bool quit = false;
     bool is_first_time = true;
     while (!quit)
     {
-        time(&now);
+        std::time(&now);
         if (is_first_time || m_emu->is_output_required())
         {
             is_first_time = false;
             output_state();
-            mk_printf("# %s\n", cmd);
+            std::cout << "# " << cmd << std::endl;
             m_emu->end_output();
         }
-        get_command(cmd, MAX_LINE_LEN);
-        this->m_last_parse_result = parse_input(cmd);
-        if (this->m_last_parse_result.parsed == true)
+        get_command(cmd);
+        m_last_parse_result = parse_input(cmd);
+        if (m_last_parse_result.parsed == true)
         {
-            mk61emu_result_t result;
-            char name_raw[MAX_FILE_NAME + 1];
-            char name[MAX_FILE_NAME + sizeof(file_ext) + 1];
-            switch (this->m_last_parse_result.cmd_kind)
+            mk61emu_result result;
+            switch (m_last_parse_result.cmd_kind)
             {
             case mk_cmd_kind_t::cmd_quit:
                 quit = true;
@@ -53,71 +57,96 @@ void mk61_commander::run()
                 break;
             case mk_cmd_kind_t::cmd_load:
             case mk_cmd_kind_t::cmd_save:
-                memset(name_raw, 0, MAX_FILE_NAME + 1);
-                mk_printf("File name: ");
-                if (input_name(name_raw, MAX_FILE_NAME) == false)
+            {
+                std::cout << "File name: ";
+                std::string filename;
+                std::cin >> filename;
+                // TODO check filename
+                filename += file_ext;
+                try
                 {
-                    mk_show_message(mk_message_t::msg_error, "Invalid name. Only uppercase letters and '_' allowed.");
-                    break;
+                    if (m_last_parse_result.cmd_kind == mk_cmd_kind_t::cmd_save)
+                    {
+                        save_state(filename);
+                        mk_show_message(mk_message_t::msg_info, "State saved");
+                    }
+                    else
+                    {
+                        load_state(filename);
+                        mk_show_message(mk_message_t::msg_info, "State loaded");
+                    }
                 }
-                memset(name, 0, MAX_FILE_NAME + sizeof(file_ext) + 1);
-                strcat(name, file_ext);
-                if (this->m_last_parse_result.cmd_kind == mk_cmd_kind_t::cmd_save)
-                    m_emu->save_state(name, &result);
-                else
-                    m_emu->load_state(name, &result);
-                if (result.succeeded == true)
-                    mk_show_message(mk_message_t::msg_info,
-                                    this->m_last_parse_result.cmd_kind == mk_cmd_kind_t::cmd_save ?
-                                    "State saved" : "State loaded");
-                else
+                catch(...)
+                {
                     mk_show_message(mk_message_t::msg_error, result.message);
+                }
                 break;
+            }
             case mk_cmd_kind_t::cmd_keys:
             case mk_cmd_kind_t::cmd_unknown:
-                break;
             case mk_cmd_kind_t::cmd_empty:
                 break;
             }
-            memset(cmd, 0, MAX_LINE_LEN + 1);
+            cmd.clear();
         }
         // Make a step when calculator in the running mode
         if (m_emu->get_power_state() == engine_power_state_t::engine_on)
             m_emu->do_step();
-        mk_sleep(100); // Simulate a delay between steps (macro ticks)
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Simulate a delay between steps (macro ticks)
     }
-    puts("\n");
+    std::cout << std::endl;
 }
 
-int mk61_commander::mk_show_message(const mk_message_t message_type, const char *format, ... )
+void mk61_commander::load_state(const std::string& filename)
 {
-    va_list args;
-    va_start(args, format);
-    int result = -1;
+    std::ifstream data(filename, std::ifstream::binary);
+    m_emu->set_state(data);
+}
+
+void mk61_commander::save_state(const std::string& filename)
+{
+    std::ofstream data(filename, std::ofstream::binary);
+    m_emu->get_state(data);
+}
+
+void mk61_commander::mk_show_message(const mk_message_t message_type, const std::string message)
+{
     switch (message_type)
     {
     case mk_message_t::msg_info:
         break;
     case mk_message_t::msg_warn:
-        mk_printf("Warning: ");
+        std::cout << "Warning: ";
         break;
     case mk_message_t::msg_error:
-        mk_printf("Error: ");
+        std::cout << "Error: ";
         break;
     }
-    char buf[MAX_LINE_LEN + 1];
-    memset(buf, 0, sizeof(buf));
-    vsnprintf(buf, MAX_LINE_LEN, format, args);
-    mk_printf("%s\n", buf);
-    mk_printf("Press <ENTER>\n");
-    mk_getchar();
-    va_end(args);
-    return result;
+    std::cout << message << std::endl;
+}
+
+void mk61_commander::clear_display()
+{
+#ifdef __linux__
+    const char* CLEAR_SCREE_ANSI = "\e[1;1H\e[2J";
+    mk_printf(CLEAR_SCREE_ANSI);
+#else
+#   ifdef _WIN32
+    system("cls");
+#   else
+    clrscr();
+#   endif // _WIN32
+#endif
+}
+
+void mk61_commander::output_display()
+{
+    std::cout << m_emu->get_indicator_str() << std::endl;
 }
 
 void mk61_commander::output_state()
 {
-    mk_clear_display();
+    clear_display();
     std::cout << "MK61 emulator v" << MK61EMU_VERSION_MAJOR << "." << MK61EMU_VERSION_MINOR << "\n"
         << "QUIT quit the program\n"
         << "ON OFF calculator on or off\n"
@@ -137,83 +166,122 @@ void mk61_commander::output_state()
     {
         std::cout << "OFF" << std::endl;
     }
-    printf("\n");
-    printf("R0: %s | R1: %s | R2: %s | R3: %s\n",
-           m_emu->get_reg_mem_str(mk61emu_R0),
-           m_emu->get_reg_mem_str(mk61emu_R1),
-           m_emu->get_reg_mem_str(mk61emu_R2),
-           m_emu->get_reg_mem_str(mk61emu_R3));
-    printf("R4: %s | R5: %s | R6: %s\n",
-           m_emu->get_reg_mem_str(mk61emu_R4),
-           m_emu->get_reg_mem_str(mk61emu_R5),
-           m_emu->get_reg_mem_str(mk61emu_R6));
-    printf("R7: %s | R8: %s | R9: %s | RA: %s\n",
-           m_emu->get_reg_mem_str(mk61emu_R7),
-           m_emu->get_reg_mem_str(mk61emu_R8),
-           m_emu->get_reg_mem_str(mk61emu_R9),
-           m_emu->get_reg_mem_str(mk61emu_RA));
-    printf("RB: %s | RC: %s | RD: %s | RE: %s\n",
-           m_emu->get_reg_mem_str(mk61emu_RB),
-           m_emu->get_reg_mem_str(mk61emu_RC),
-           m_emu->get_reg_mem_str(mk61emu_RD),
-           m_emu->get_reg_mem_str(mk61emu_RE));
-    printf("\n");
-    printf(" T: '%s'\tCounter: %s\tRunning: %s\n",
-           m_emu->get_reg_stack_str(mk61emu_RT),
-           m_emu->get_prog_counter_str(),
-           m_emu->is_running() ? "yes" : "no");
-    printf(" Z: '%s'\n", m_emu->get_reg_stack_str(mk61emu_RZ));
-    printf(" Y: '%s'\n", m_emu->get_reg_stack_str(mk61emu_RY));
-    printf(" X: '%s'\n", m_emu->get_reg_stack_str(mk61emu_RX));
-    printf("X1: '%s'\n", m_emu->get_reg_stack_str(mk61emu_RX1));
-    printf("\n");
-    printf("DISPLAY: '%s'\n", m_emu->get_indicator_str());
+    std::cout << "\n"
+        << "R0: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_R0)
+        << " | R1: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_R1)
+        << " | R2: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_R2)
+        << " | R3: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_R3)
+        << "\n"
+        << "R4: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_R4)
+        << " | R5: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_R5)
+        << " | R6: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_R6)
+        << "\n"
+        << "R7: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_R7)
+        << " | R8: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_R8)
+        << " | R9: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_R9)
+        << " | RA: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_RA)
+        << "\n"
+        << "RB: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_RB)
+        << " | RC: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_RC)
+        << " | RD: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_RD)
+        << " | RE: " << m_emu->get_reg_mem_str(mk61emu_reg_mem_t::mk61emu_RE)
+        << "\n\n"
+        << " T: '" << m_emu->get_reg_stack_str(mk61emu_reg_stack_t::RT)
+        << "'\tCounter: " << m_emu->get_prog_counter_str()
+        << "\tRunning: " << (m_emu->is_running() ? "yes" : "no")
+        << "\n"
+        << " Z: '" << m_emu->get_reg_stack_str(mk61emu_reg_stack_t::RZ) << "'\n"
+        << " Y: '" << m_emu->get_reg_stack_str(mk61emu_reg_stack_t::RY) << "'\n"
+        << " X: '" << m_emu->get_reg_stack_str(mk61emu_reg_stack_t::RX) << "'\n"
+        << "X1: '" << m_emu->get_reg_stack_str(mk61emu_reg_stack_t::RX1) << "'\n"
+        << "\n"
+        << "DISPLAY: '" << m_emu->get_indicator_str() << "'"
+        << std::endl;
 }
 
-bool mk61_commander::get_command(char *cmdstr, int num)
+int mk61_commander::mk_kbhit(void)
+{
+#ifdef __linux__
+    struct timeval tv;
+    fd_set rdfs;
+    tv.tv_sec = 0;
+    tv.tv_usec = 0;
+    FD_ZERO(&rdfs);
+    FD_SET(STDIN_FILENO, &rdfs);
+    select(STDIN_FILENO + 1, &rdfs, NULL, NULL, &tv);
+    return FD_ISSET(STDIN_FILENO, &rdfs);
+#else
+    return kbhit();
+#endif
+}
+
+
+int mk61_commander::mk_getch(const bool nowait, const bool echo)
+{
+    int ch = EOF;
+#ifdef __unix__
+    struct termios oldattr, newattr;
+    tcgetattr(STDIN_FILENO, &oldattr);
+    newattr = oldattr;
+    newattr.c_lflag &= ~ICANON;
+    if (echo == true)
+        newattr.c_lflag &= ~ECHO;
+    if (nowait == true)
+    {
+        newattr.c_cc[VMIN] = 1;
+        newattr.c_cc[VTIME] = 0;
+    }
+    tcsetattr(STDIN_FILENO, TCSANOW, &newattr);
+    if (!nowait || mk_kbhit() != 0)
+        ch = mk_getchar();
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldattr);
+#else
+    if (nowait == false || kbhit())
+    {
+        if (echo == true)
+            ch = getche();
+        else
+            ch = getch();
+    }
+#endif
+    return ch;
+}
+
+bool mk61_commander::get_command(std::string& cmd)
 {
     bool result = false;
-    char curr[2];
-    int i = 0;
-    int c = mk_getch(true, false);
+    int ch = mk_getch(true, false);
+    if (ch == EOF || ch > 127)
+        return result;
+    char c = static_cast<char>(ch);
     switch(c)
     {
     case '\b':
         // Delete last character
-        i = strlen(cmdstr);
-        if (i > 0 && i < num)
-            cmdstr[i - 1] = 0;
+        if (cmd.size() > 0)
+            cmd.resize(cmd.size() - 1);
         break;
     case 27:
         // Clear the whole input character sequence
-        memset(cmdstr, 0, num);
+        cmd.clear();
     default:
         if (c == '\n')
             result = true;
-        memset(curr, 0, 2);
-        if ((c > 31 && c < 127) || c == '\n')
-        {
-            curr[0] = c;
-            strcat(cmdstr, curr);
-        }
-        else if (c > 127)
-        {
-            curr[0] = c;
-            strcat(cmdstr, curr);
-        }
+        cmd += c;
     }
     return result;
 }
 
-mk_parse_result mk61_commander::parse_input(const char *cmd)
+mk_parse_result mk61_commander::parse_input(const std::string& cmd)
 {
     mk_parse_result result;
     result.parsed = true;
     result.cmd_kind = mk_cmd_kind_t::cmd_empty;
-    if (strlen(cmd) == 0)
+    if (cmd.size() == 0)
         return result;
-
     result.cmd_kind = mk_cmd_kind_t::cmd_keys;
+    std::string cmd_up(cmd);
+    std::transform(cmd_up.begin(), cmd_up.end(), cmd_up.begin(), ::toupper);
     // Keys
     if (cmd[0] > 47 && cmd[0] < 58)
         m_emu->do_key_press(((uint8_t)cmd[0]) - 46, 1); // Digits 0..9
@@ -233,87 +301,66 @@ mk_parse_result mk61_commander::parse_input(const char *cmd)
         m_emu->do_key_press(5, 8);
     else if (cmd[0] == ',' || cmd[0] == '.' || cmd[0] == 'A' || cmd[0] == 'a')
         m_emu->do_key_press(7, 8);
-    else if (strcmp(cmd, "STPL") == 0)
+    else if (cmd_up == "STPL")
         m_emu->do_key_press(7, 9);
-    else if (strcmp(cmd, "STPR") == 0)
+    else if (cmd_up == "STPR")
         m_emu->do_key_press(9, 9);
-    else if (strcmp(cmd, "RTN") == 0)
+    else if (cmd_up == "RTN")
         m_emu->do_key_press(4, 9);
-    else if (strcmp(cmd, "RS") == 0)
+    else if (cmd_up == "RS")
         m_emu->do_key_press(2, 9);
-    else if (strcmp(cmd, "STO") == 0)
+    else if (cmd_up == "STO")
         m_emu->do_key_press(6, 9);
-    else if (strcmp(cmd, "RCL") == 0)
+    else if (cmd_up == "RCL")
         m_emu->do_key_press(8, 9);
-    else if (strcmp(cmd, "GTO") == 0)
+    else if (cmd_up == "GTO")
         m_emu->do_key_press(3, 9);
-    else if (strcmp(cmd, "GSB") == 0)
+    else if (cmd_up == "GSB")
         m_emu->do_key_press(5, 9);
-    else if (strcmp(cmd, "XY") == 0)
+    else if (cmd_up == "XY")
         m_emu->do_key_press(6, 8);
-    else if (strcmp(cmd, "SGN") == 0) // /-/
+    else if (cmd_up == "SGN") // /-/
         m_emu->do_key_press(8, 8);
-    else if (strcmp(cmd, "EXP") == 0)
+    else if (cmd_up == "EXP")
         m_emu->do_key_press(9, 8);
-    else if (strcmp(cmd, "CX") == 0)
+    else if (cmd_up == "CX")
         m_emu->do_key_press(10, 8);
-    else if (strcmp(cmd, "\n") == 0 || strcmp(cmd, "ENT") == 0)
+    else if (cmd_up == "ENT" || cmd == "\n")
         m_emu->do_key_press(11, 8);
     // Modes
-    else if (strcmp(cmd, "PRG") == 0)
+    else if (cmd_up == "PRG")
     {
         m_emu->do_key_press(11, 9); // F
         m_emu->do_step();
         m_emu->do_key_press(9, 8); // EXP key
     }
-    else if (strcmp(cmd, "AUT") == 0)
+    else if (cmd_up == "AUT")
     {
         m_emu->do_key_press(11, 9); // F
         m_emu->do_step();
         m_emu->do_key_press(8, 8); // /-/ key
     }
-    else if (strcmp(cmd, "SAVE") == 0)
+    else if (cmd_up == "SAVE")
         result.cmd_kind = mk_cmd_kind_t::cmd_save;
-    else if (strcmp(cmd, "LOAD") == 0)
+    else if (cmd_up == "LOAD")
         result.cmd_kind = mk_cmd_kind_t::cmd_load;
     // Modes
-    else if (strcmp(cmd, "RAD") == 0)
-        m_emu->set_angle_unit(angle_unit_radian);
-    else if (strcmp(cmd, "GRAD") == 0)
-        m_emu->set_angle_unit(angle_unit_grade);
-    else if (strcmp(cmd, "DEG") == 0)
-        m_emu->set_angle_unit(angle_unit_degree);
-    else if (strcmp(cmd, "QUIT") == 0)
+    else if (cmd_up == "RAD")
+        m_emu->set_angle_unit(angle_unit_t::radian);
+    else if (cmd_up == "GRAD")
+        m_emu->set_angle_unit(angle_unit_t::grade);
+    else if (cmd_up == "DEG")
+        m_emu->set_angle_unit(angle_unit_t::degree);
+    else if (cmd_up == "QUIT")
         result.cmd_kind = mk_cmd_kind_t::cmd_quit;
-    else if (strcmp(cmd, "OFF") == 0)
+    else if (cmd_up == "OFF")
         result.cmd_kind = mk_cmd_kind_t::cmd_off;
-    else if (strcmp(cmd, "ON") == 0)
+    else if (cmd_up == "ON")
         result.cmd_kind = mk_cmd_kind_t::cmd_on;
     else
     {
         result.parsed = false;
         result.cmd_kind = mk_cmd_kind_t::cmd_unknown;
-    }
-    return result;
-}
-
-bool mk61_commander::input_name(char *str, size_t max_size)
-{
-    bool result = false;
-    mk_gets(str, max_size);
-    int i = 0, len = strlen(str);
-    if (len > 0)
-        str[--len] = 0; // Delete '\n'
-    for (i = 0; i < len; i++)
-    {
-        unsigned char c = str[i];
-        if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c == '_') || (c >= 'a'  && c <= 'z'))
-            result = true;
-        else
-        {
-            result = false;
-            break;
-        }
     }
     return result;
 }
