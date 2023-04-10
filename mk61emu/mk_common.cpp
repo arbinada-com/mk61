@@ -6,7 +6,7 @@
 
 mk_engine::mk_engine()
 {
-    m_outputRequired = false;
+    m_is_output_required = false;
     m_powerState = engine_power_state_t::engine_off;
 }
 
@@ -17,12 +17,12 @@ mk_engine::~mk_engine()
 
 bool mk_engine::is_output_required()
 {
-    return m_outputRequired;
+    return m_is_output_required;
 }
 
 mk_result_t mk_engine::end_output()
 {
-    m_outputRequired = false;
+    m_is_output_required = false;
     return mk_result_t::mk_ok;
 }
 

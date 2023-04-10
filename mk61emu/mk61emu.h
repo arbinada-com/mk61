@@ -2,7 +2,7 @@
 #define MK61EMU_H_INCLUDED
 
 #define MK61EMU_VERSION_MAJOR 1
-#define MK61EMU_VERSION_MINOR 1
+#define MK61EMU_VERSION_MINOR 2
 
 #include <iostream>
 #include "mk_common.h"
@@ -46,7 +46,7 @@ public:
 private:
     void read_state(std::istream& data);
     void qrite_state(std::ostream& data);
-    void set_ROM(const IK13_ROM *ROM);
+    void set_ROM(const IK13_ROM* value);
     void tick();
 private:
     const IK13_ROM *ROM;
@@ -150,13 +150,12 @@ public:
     const char* get_reg_stack_str(mk61emu_reg_stack_t reg);
     angle_unit_t get_angle_unit();
     void set_angle_unit(const angle_unit_t value);
-    const char* get_angle_unit_str();
     const char* get_indicator_str();
     const char* get_prog_counter_str();
     const char* get_reg_mem_str(mk61emu_reg_mem_t reg);
     mk_result_t do_step() override;
     virtual mk_result_t do_input(const char* buf, size_t length);
-    virtual mk_result_t do_key_press(const int key1, const int key2);
+    virtual mk_result_t do_key_press(const uint8_t key1, const uint8_t key2);
     virtual bool is_output_required();
     virtual mk_result_t set_power_state(const engine_power_state_t value);
     bool is_running();

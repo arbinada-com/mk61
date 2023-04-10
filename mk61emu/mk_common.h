@@ -1,6 +1,8 @@
 #ifndef MK_COMMON_INCLUDED
 #define MK_COMMON_INCLUDED
 
+#include <cinttypes>
+
 typedef unsigned char byte;
 
 enum class mk_result_t
@@ -24,11 +26,11 @@ public:
     virtual mk_result_t end_output();
     virtual mk_result_t do_step() = 0;
     virtual mk_result_t do_input(const char* buf, size_t length) = 0;
-    virtual mk_result_t do_key_press(const int key1, const int key2) = 0;
+    virtual mk_result_t do_key_press(const uint8_t key1, const uint8_t key2) = 0;
     virtual engine_power_state_t get_power_state();
     virtual mk_result_t set_power_state(const engine_power_state_t value);
 protected:
-    bool m_outputRequired;
+    bool m_is_output_required = false;
 private:
     engine_power_state_t m_powerState;
 };

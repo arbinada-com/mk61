@@ -1,18 +1,5 @@
 #include "mk61emu.h"
 
-static angle_unit_t CharToAngleUnit(const char c)
-{
-    switch (c)
-    {
-    case 10:
-        return angle_unit_t::radian;
-    case 11:
-        return angle_unit_t::degree;
-    default:
-        return angle_unit_t::grade;
-    }
-}
-
 std::istream& operator>>(std::istream& input, angle_unit_t& data)
 {
     int value;
@@ -800,9 +787,9 @@ IK13::IK13()
     comma = 0;
 }
 
-void IK13::set_ROM(const IK13_ROM *ROM)
+void IK13::set_ROM(const IK13_ROM* value)
 {
-    this->ROM = ROM;
+    this->ROM = value;
 }
 
 static mtick_t J[] =
@@ -1203,11 +1190,11 @@ mk_result_t mk61_emu::set_power_state(const engine_power_state_t value)
         cleanup();
         break;
     }
-    m_outputRequired = true;
+    m_is_output_required = true;
     return mk_result_t::mk_ok;
 }
 
-mk_result_t mk61_emu::do_key_press(const int key1, const int key2)
+mk_result_t mk61_emu::do_key_press(const uint8_t key1, const uint8_t key2)
 {
     if (get_power_state() == engine_power_state_t::engine_on)
     {
@@ -1217,7 +1204,7 @@ mk_result_t mk61_emu::do_key_press(const int key1, const int key2)
             m_IK1302->key_y = key2;
         }
         do_step();
-        m_outputRequired = true;
+        m_is_output_required = true;
     }
     return mk_result_t::mk_ok;
 }
@@ -1227,9 +1214,9 @@ bool mk61_emu::is_output_required()
     if (m_RSModeChanged)
     {
         m_RSModeChanged = false;
-        return m_outputRequired;
+        return m_is_output_required;
     }
-    return m_outputRequired && !is_running();
+    return m_is_output_required && !is_running();
 }
 
 
@@ -1366,7 +1353,7 @@ mk_result_t mk61_emu::do_step()
     mk61_register_t reg_stack[MK61EMU_REG_STACK_COUNT];
     mk61_register_position_t prog_counter[2];
     int i, j = 0;
-    if (!m_outputRequired)
+    if (!m_is_output_required)
     {
         for (i = 0; i < (m_mode == mk61emu_mode_t::mode_61 ? 15 : 14); i++)
             memcpy(reg_mem[0], m_reg_mem[0], sizeof(m_reg_mem));
@@ -1406,7 +1393,7 @@ mk_result_t mk61_emu::do_step()
     if (this->m_IR2_1->mtick == 84)
         read_all_fields(0);
 
-    if (!m_outputRequired)
+    if (!m_is_output_required)
     {
         for (i = 0; i < (m_mode == mk61emu_mode_t::mode_61 ? 15 : 14); i++)
         {
@@ -1414,15 +1401,15 @@ mk_result_t mk61_emu::do_step()
             {
                 if (reg_mem[i][j] != m_reg_mem[i][j])
                 {
-                    m_outputRequired = true;
+                    m_is_output_required = true;
                     break;
                 }
             }
-            if (m_outputRequired)
+            if (m_is_output_required)
                 break;
         }
     }
-    if (!m_outputRequired)
+    if (!m_is_output_required)
     {
         for (i = 0; i < 5; i++)
         {
@@ -1430,30 +1417,28 @@ mk_result_t mk61_emu::do_step()
             {
                 if (reg_stack[i][j] != m_reg_stack[i][j])
                 {
-                    m_outputRequired = true;
+                    m_is_output_required = true;
                     break;
                 }
             }
-            if (m_outputRequired)
+            if (m_is_output_required)
                 break;
         }
     }
-    if (!m_outputRequired)
+    if (!m_is_output_required)
     {
         for (i = 0; i < 2; i++)
             if (prog_counter[i] != m_prog_counter[i])
             {
-                m_outputRequired = true;
+                m_is_output_required = true;
                 break;
             }
     }
-
     m_RSModeChanged = wasRunning != is_running();
-
     return mk_result_t::mk_ok;
 }
 
-mk_result_t mk61_emu::do_input(const char* buf, size_t length)
+mk_result_t mk61_emu::do_input(const char*, size_t)
 {
     return mk_result_t::mk_ok;
 }
@@ -1481,23 +1466,6 @@ angle_unit_t mk61_emu::get_angle_unit()
 void mk61_emu::set_angle_unit(const angle_unit_t value)
 {
     m_angle_unit = value;
-}
-
-
-const char* mk61_emu::get_angle_unit_str()
-{
-    if (get_power_state() == engine_power_state_t::engine_off)
-        return "";
-    switch (this->m_angle_unit)
-    {
-    case angle_unit_t::radian:
-        return "RAD";
-    case angle_unit_t::grade:
-        return "GRD";
-    case angle_unit_t::degree:
-        return "DEG";
-    }
-    return "?";
 }
 
 const char* mk61_emu::get_indicator_str()
