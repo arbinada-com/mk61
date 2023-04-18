@@ -6,6 +6,7 @@
 #include <string>
 #include <mutex>
 #include <vector>
+#include <map>
 #include "mk61emu.h"
 
 using strings_t = std::vector<std::string>;
@@ -68,12 +69,44 @@ private:
     std::atomic_bool m_simulate_delay = true;
 };
 
+class mk_key_coord
+{
+public:
+    mk_key_coord(uint8_t key1, uint8_t key2)
+        : m_key1(key1), m_key2(key2)
+    {}
+    mk_key_coord(const mk_key_coord&) = default;
+    mk_key_coord& operator =(const mk_key_coord&) = default;
+public:
+    uint8_t key1() const { return m_key1; }
+    uint8_t key2() const { return m_key2; }
+private:
+    uint8_t m_key1;
+    uint8_t m_key2;
+};
+
+class mk_instruction_keys
+{
+public:
+    mk_instruction_keys(mk_instruction instruction, std::vector<mk_key_coord> keys)
+        : m_instruction(instruction), m_keys(keys)
+    {}
+public:
+    const mk_instruction& instruction() const { return m_instruction; }
+    const std::vector<mk_key_coord>& keys() const { return m_keys; }
+private:
+    mk_instruction m_instruction;
+    std::vector<mk_key_coord> m_keys;
+};
+
 class mk61_commander
 {
 public:
     mk61_commander();
     mk61_commander(const mk61_commander&) = delete;
     mk61_commander& operator =(const mk61_commander&) = delete;
+    mk61_commander(mk61_commander&&) = delete;
+    mk61_commander& operator =(mk61_commander&&) = delete;
 public:
     void run();
 private:
@@ -89,6 +122,7 @@ private:
     mk_parse_result parse_input(const std::string& cmd);
     void load_state(const std::string& filename);
     void save_state(const std::string& filename);
+    std::map<std::string, mk_instruction_keys> m_instructions;
 };
 
 #endif // MK61COMMANDER_H_INCLUDED
