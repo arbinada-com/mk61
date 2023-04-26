@@ -1,5 +1,18 @@
 #include "mk_common.h"
 
+
+/**
+* strutils
+*/
+
+std::string strutils::to_upper(const std::string& s)
+{
+    std::string result;
+    for (const auto& c : s)
+        result += (char)toupper(c);
+    return result;
+}
+
 /**
  * MK72Engine
  */

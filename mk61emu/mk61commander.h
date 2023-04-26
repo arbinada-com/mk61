@@ -99,6 +99,28 @@ private:
     std::vector<mk_key_coord> m_keys;
 };
 
+
+class instruction_index
+{
+public:
+    void init();
+public:
+    static std::string make_key(const std::string& mnemonics);
+private:
+    void add_instr(
+        uint8_t code,
+        const std::string& mnemonics,
+        const std::string& caption,
+        std::vector<mk_key_coord> keys,
+        std::vector<std::string> mnemonics_synonyms = {}
+    );
+    void check_mnemonics_not_exists(const std::string& mnemonics) noexcept(false);
+private:
+    std::vector<std::shared_ptr<mk_instruction_keys> > m_data;
+    std::map<std::string, std::shared_ptr<mk_instruction_keys>> m_index;
+};
+
+
 class mk61_commander
 {
 public:
@@ -111,6 +133,7 @@ public:
     void run();
 private:
     std::unique_ptr<emu_runner> m_runner;
+    instruction_index m_instructions;
 private:
     void clear_screen();
     void output_display();
@@ -122,7 +145,6 @@ private:
     mk_parse_result parse_input(const std::string& cmd);
     void load_state(const std::string& filename);
     void save_state(const std::string& filename);
-    std::map<std::string, mk_instruction_keys> m_instructions;
 };
 
 #endif // MK61COMMANDER_H_INCLUDED

@@ -6,6 +6,12 @@
 
 typedef unsigned char byte;
 
+class strutils
+{
+public:
+    static std::string to_upper(const std::string& s);
+};
+
 class mk_instruction
 {
 public:

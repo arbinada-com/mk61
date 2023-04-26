@@ -119,11 +119,75 @@ void emu_runner::internal_run()
 }
 
 /*
+* instruction_index
+*/
+std::string instruction_index::make_key(const std::string& mnemonics)
+{
+    return strutils::to_upper(mnemonics);
+}
+
+void instruction_index::add_instr(
+    uint8_t code,
+    const std::string& mnemonics,
+    const std::string& caption,
+    std::vector<mk_key_coord> keys,
+    std::vector<std::string> mnemonics_synonyms
+)
+{
+    auto instr = mk_instruction(code, mnemonics, caption);
+    auto instr_keys = std::make_shared<mk_instruction_keys>(instr, keys);
+    check_mnemonics_not_exists(instr.mnemonics());
+    m_data.push_back(instr_keys);
+    m_index.insert(std::make_pair(make_key(instr.mnemonics()), instr_keys));
+    for (const auto& synonym : mnemonics_synonyms)
+    {
+        check_mnemonics_not_exists(synonym);
+        m_index.insert(std::make_pair(make_key(synonym), instr_keys));
+    }
+}
+
+void instruction_index::check_mnemonics_not_exists(const std::string& mnemonics) noexcept(false)
+{
+    std::string key = make_key(mnemonics);
+    if (m_index.find(key) != m_index.cend())
+        throw std::logic_error("Mnemonics alredy exists: " + key);
+}
+
+
+void instruction_index::init()
+{
+    add_instr(0x00, "0", "digit 0", { {0, 1} });
+    add_instr(0x01, "1", "digit 1", { {1, 1} });
+    add_instr(0x02, "2", "digit 2", { {2, 1} });
+    add_instr(0x03, "3", "digit 3", { {3, 1} });
+    add_instr(0x04, "4", "digit 4", { {4, 1} });
+    add_instr(0x05, "5", "digit 5", { {5, 1} });
+    add_instr(0x06, "6", "digit 6", { {6, 1} });
+    add_instr(0x07, "7", "digit 7", { {7, 1} });
+    add_instr(0x08, "9", "digit 8", { {8, 1} });
+    add_instr(0x09, "9", "digit 9", { {9, 1} });
+    add_instr(0x0A, ",", "decimal point", { {7, 8} }, {"."});
+    add_instr(0x0B, "+/-", "changes the sign of a number", { {8, 8} }, {"/-/"});
+    add_instr(0x0C, "E", "enter powers of ten", { {9, 8} }, { "EE" });
+    add_instr(0x0D, "Cx", "clear display (RX)", { {10, 8} });
+    add_instr(0x0E, "ENT", "enter", { {11, 8} });
+    add_instr(0x0F, "LASTx", "last value of RX", { {11, 9}, {11, 8} }, { "FBx", "FANS"});
+    add_instr(0x10, "+", "addition", { {2, 8} });
+    add_instr(0x11, "-", "substraction", { {3, 8} });
+    add_instr(0x12, "*", "multiplication", { {4, 8} }, {"x"});
+    add_instr(0x13, "/", "division", { {5, 8} }, { ":" });
+    add_instr(0x14, "<->", "swap RX with RY", { {6, 8} }, { "XY" });
+}
+
+
+/*
 * mk61_commander
 */
 mk61_commander::mk61_commander()
     : m_runner(std::make_unique<emu_runner>())
-{}
+{
+    m_instructions.init();
+}
 
 strings_t mk61_commander::parse_cmdline(const std::string& cmdline)
 {
@@ -350,9 +414,7 @@ mk_parse_result mk61_commander::parse_input(const std::string& cmd)
     if (cmd.size() == 0)
         return result;
     result.cmd_kind = mk_cmd_kind_t::cmd_keys;
-    std::string cmd_up;
-    for (auto& c : cmd)
-        cmd_up += (char)toupper(c);
+    std::string cmd_up = strutils::to_upper(cmd);
     //std::transform(cmd_up.begin(), cmd_up.end(), cmd_up.begin(), ::toupper);
     // Keys
     if (cmd_up.size() == 1)
