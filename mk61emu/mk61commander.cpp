@@ -119,6 +119,20 @@ void emu_runner::internal_run()
 }
 
 /*
+* mk_instruction_keys
+*/
+std::string mk_instruction_keys::keys_to_string() const
+{
+    std::stringstream ss;
+    for (const auto& key : m_keys)
+    {
+        ss << "{" << key.key1() << "," << key.key2() << "{";
+    }
+    return ss.str();
+}
+
+
+/*
 * instruction_index
 */
 std::string instruction_index::make_key(const std::string& mnemonics)
@@ -127,7 +141,7 @@ std::string instruction_index::make_key(const std::string& mnemonics)
 }
 
 void instruction_index::add_instr(
-    uint8_t code,
+    int32_t code,
     const std::string& mnemonics,
     const std::string& caption,
     std::vector<mk_key_coord> keys,
@@ -137,6 +151,7 @@ void instruction_index::add_instr(
     auto instr = mk_instruction(code, mnemonics, caption);
     auto instr_keys = std::make_shared<mk_instruction_keys>(instr, keys);
     check_mnemonics_not_exists(instr.mnemonics());
+    check_keys_not_exist(keys);
     m_data.push_back(instr_keys);
     m_index.insert(std::make_pair(make_key(instr.mnemonics()), instr_keys));
     for (const auto& synonym : mnemonics_synonyms)
@@ -146,11 +161,26 @@ void instruction_index::add_instr(
     }
 }
 
-void instruction_index::check_mnemonics_not_exists(const std::string& mnemonics) noexcept(false)
+void instruction_index::check_mnemonics_not_exists(const std::string& mnemonics)
 {
     std::string key = make_key(mnemonics);
     if (m_index.find(key) != m_index.cend())
         throw std::logic_error("Mnemonics alredy exists: " + key);
+}
+
+void instruction_index::check_keys_not_exist(std::vector<mk_key_coord> keys)
+{
+    for (const auto& instr_keys : m_data)
+    {
+        if (instr_keys->keys().size() == keys.size())
+        {
+            for (size_t i = 0; i != keys.size(); ++i)
+            {
+                if (instr_keys->keys()[i] == keys[i])
+                    throw std::logic_error("Key sequence alredy exists: " + instr_keys->keys_to_string());
+            }
+        }
+    }
 }
 
 
@@ -177,6 +207,42 @@ void instruction_index::init()
     add_instr(0x12, "*", "multiplication", { {4, 8} }, {"x"});
     add_instr(0x13, "/", "division", { {5, 8} }, { ":" });
     add_instr(0x14, "<->", "swap RX with RY", { {6, 8} }, { "XY" });
+    add_instr(0x15, "10^x", "power of ten", { {11, 9}, {0, 1} });
+    add_instr(0x16, "EXP", "power of e", { {11, 9}, {1, 1} });
+    add_instr(0x17, "LG", "decimal logarithm", { {11, 9}, {2, 1} });
+    add_instr(0x18, "LN", "natural logarithm", { {11, 9}, {3, 1} });
+    add_instr(0x19, "ASIN", "arc sine", { {11, 9}, {4, 1} }, { "ARCSIN" });
+    add_instr(0x1A, "ACOS", "arc cosine", { {11, 9}, {5, 1} }, { "ARCCOS" });
+    add_instr(0x1B, "ATAN", "arc tangent", { {11, 9}, {6, 1} }, { "ARCTG" });
+    add_instr(0x1C, "SIN", "sine", { {11, 9}, {7, 1} });
+    add_instr(0x1D, "COS", "cosine", { {11, 9}, {8, 1} });
+    add_instr(0x1E, "TAN", "tangent", { {11, 9}, {9, 1} }, { "TG" });
+    // 0x1F
+    add_instr(0x20, "PI", "pi constant", { {11, 9}, {2, 8} });
+    add_instr(0x21, "SQRT", "square root", { {11, 9}, {3, 8} });
+    add_instr(0x22, "x^2", "square of X", { {11, 9}, {4, 8} });
+    add_instr(0x23, "1/x", "inversion of X", { {11, 9}, {5, 8} }, { "INV" });
+    add_instr(0x24, "X^Y", "power of X", { {11, 9}, {6, 8} });
+    add_instr(0x25, "R", "Roll down stack", { {11, 9}, {7, 8} });
+    add_instr(0x26, "M-D", "HM to degrees", { {10, 9}, {6, 1} });
+    // Skip 0x27..29
+    add_instr(0x2A, "MS-D", "MS to degree", { {10, 9}, {3, 1} });
+    // Skip 0x2B..2F
+    add_instr(0x30, "D-MS", "degrees to MS", { {10, 9}, {6, 8} });
+    add_instr(0x31, "ABS", "absolute value", { {10, 9}, {4, 1} }, { "|x|" });
+    add_instr(0x32, "SGN", "sign of X", { {10, 9}, {5, 1} });
+    add_instr(0x33, "D-M", "degrees to M", { {10, 9}, {2, 8} });
+    add_instr(0x34, "INT", "integer part", { {10, 9}, {7, 1} }, { "[x]" });
+    add_instr(0x35, "FRAC", "fractional part", { {10, 9}, {8, 1} }, { "{x}" });
+    add_instr(0x35, "MAX", "max of X and Y", { {10, 9}, {9, 1} });
+
+    // Modes
+    add_instr(mk_instruction::no_code, "AUT", "calculation mode", { {11, 9}, {8, 8} });
+    add_instr(mk_instruction::no_code, "PRG", "programming mode", { {11, 9}, {9, 8} });
+    // Setting the angular mode
+    // DEG Sets degree mode, which uses decimal degrees rather than hexagesimal degrees (degrees, minutes, seconds)
+    // RAD Sets radian mode
+    // GRAD Sets gradient mode
 }
 
 

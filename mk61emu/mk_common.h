@@ -15,10 +15,10 @@ public:
 class mk_instruction
 {
 public:
-    mk_instruction(uint8_t code, std::string mnemonics, std::string caption)
+    mk_instruction(int32_t code, std::string mnemonics, std::string caption)
         : m_code(code), m_mnemonics(mnemonics), m_caption(caption)
     {}
-    mk_instruction(uint8_t code, std::string mnemonics)
+    mk_instruction(int32_t code, std::string mnemonics)
         : mk_instruction(code, mnemonics, "")
     {}
     mk_instruction(const mk_instruction&) = default;
@@ -26,11 +26,13 @@ public:
     mk_instruction(mk_instruction&&) = default;
     mk_instruction& operator =(mk_instruction&&) = default;
 public:
-    uint8_t code() const { return m_code; }
+    static const int no_code = -1;
+public:
+    int32_t code() const { return m_code; }
     const std::string& mnemonics() const { return m_mnemonics; }
     const std::string& caption() { return m_caption; }
 private:
-    uint8_t m_code;
+    int32_t m_code;
     std::string m_mnemonics;
     std::string m_caption;
 };

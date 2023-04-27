@@ -78,6 +78,11 @@ public:
     mk_key_coord(const mk_key_coord&) = default;
     mk_key_coord& operator =(const mk_key_coord&) = default;
 public:
+    bool operator ==(const mk_key_coord& rhs)
+    {
+        return (m_key1 == rhs.m_key1) && (m_key2 == rhs.m_key2);
+    }
+public:
     uint8_t key1() const { return m_key1; }
     uint8_t key2() const { return m_key2; }
 private:
@@ -94,6 +99,7 @@ public:
 public:
     const mk_instruction& instruction() const { return m_instruction; }
     const std::vector<mk_key_coord>& keys() const { return m_keys; }
+    std::string keys_to_string() const;
 private:
     mk_instruction m_instruction;
     std::vector<mk_key_coord> m_keys;
@@ -108,13 +114,14 @@ public:
     static std::string make_key(const std::string& mnemonics);
 private:
     void add_instr(
-        uint8_t code,
+        int32_t code,
         const std::string& mnemonics,
         const std::string& caption,
         std::vector<mk_key_coord> keys,
         std::vector<std::string> mnemonics_synonyms = {}
     );
-    void check_mnemonics_not_exists(const std::string& mnemonics) noexcept(false);
+    void check_mnemonics_not_exists(const std::string& mnemonics);
+    void check_keys_not_exist(std::vector<mk_key_coord> keys);
 private:
     std::vector<std::shared_ptr<mk_instruction_keys> > m_data;
     std::map<std::string, std::shared_ptr<mk_instruction_keys>> m_index;
