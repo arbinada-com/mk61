@@ -165,7 +165,7 @@ void instruction_index::check_mnemonics_not_exists(const std::string& mnemonics)
 {
     std::string key = make_key(mnemonics);
     if (m_index.find(key) != m_index.cend())
-        throw std::logic_error("Mnemonics alredy exists: " + key);
+        throw std::logic_error("Mnemonics already exists: " + key);
 }
 
 void instruction_index::check_keys_not_exist(std::vector<mk_key_coord> keys)
@@ -183,7 +183,7 @@ void instruction_index::check_keys_not_exist(std::vector<mk_key_coord> keys)
                     break;
             }
             if (match_count == keys.size())
-                throw std::logic_error("Key sequence alredy exists: " + instr_keys->keys_to_string());
+                throw std::logic_error("Key sequence already exists: " + instr_keys->keys_to_string());
         }
     }
 }
@@ -239,7 +239,47 @@ void instruction_index::init()
     add_instr(0x33, "D-M", "degrees to M", { {10, 9}, {2, 8} });
     add_instr(0x34, "INT", "integer part", { {10, 9}, {7, 1} }, { "[x]" });
     add_instr(0x35, "FRAC", "fractional part", { {10, 9}, {8, 1} }, { "{x}" });
-    add_instr(0x35, "MAX", "max of X and Y", { {10, 9}, {9, 1} });
+    add_instr(0x36, "MAX", "max of X and Y", { {10, 9}, {9, 1} });
+    add_instr(0x37, "AND", "logical AND", { {10, 9}, {7, 8} });
+    add_instr(0x38, "OR", "logical OR", { {10, 9}, {8, 8} });
+    add_instr(0x39, "XOR", "logical XOR", { {10, 9}, {9, 8} });
+    add_instr(0x3A, "NOT", "logical NOT", { {10, 9}, {10, 8} });
+    add_instr(0x3B, "RND", "random number", { {10, 9}, {11, 8} });
+    // Skip 0x3C..3F
+    add_instr(0x40, "M0", "store RX to memory register R0", { {6, 9}, {0, 1} }, { "MS0", "STO0" });
+    add_instr(0x41, "M1", "store RX to memory register R1", { {6, 9}, {1, 1} }, { "MS1", "STO1" });
+    add_instr(0x42, "M2", "store RX to memory register R2", { {6, 9}, {2, 1} }, { "MS2", "STO2" });
+    add_instr(0x43, "M3", "store RX to memory register R3", { {6, 9}, {3, 1} }, { "MS3", "STO3" });
+    add_instr(0x44, "M4", "store RX to memory register R4", { {6, 9}, {4, 1} }, { "MS4", "STO4" });
+    add_instr(0x45, "M5", "store RX to memory register R5", { {6, 9}, {5, 1} }, { "MS5", "STO5" });
+    add_instr(0x46, "M6", "store RX to memory register R6", { {6, 9}, {6, 1} }, { "MS6", "STO6" });
+    add_instr(0x47, "M7", "store RX to memory register R7", { {6, 9}, {7, 1} }, { "MS7", "STO7" });
+    add_instr(0x48, "M8", "store RX to memory register R8", { {6, 9}, {8, 1} }, { "MS8", "STO8" });
+    add_instr(0x49, "M9", "store RX to memory register R9", { {6, 9}, {9, 1} }, { "MS9", "STO9" });
+    add_instr(0x4A, "MA", "store RX to memory register RA", { {6, 9}, {7, 8} }, { "MSA", "STOA" });
+    add_instr(0x4B, "MB", "store RX to memory register RB", { {6, 9}, {8, 8} }, { "MSB", "STOB" });
+    add_instr(0x4C, "MC", "store RX to memory register RC", { {6, 9}, {9, 8} }, { "MSC", "STOC" });
+    add_instr(0x4D, "MD", "store RX to memory register RD", { {6, 9}, {10, 8} }, { "MSD", "STOD" });
+    add_instr(0x4E, "ME", "store RX to memory register RE", { {6, 9}, {11, 8} }, { "MSE", "STOE" });
+    // Skip 0x4F
+    add_instr(0x50, "R/S", "run/stop", { {2, 9} }, { "RS" });
+
+    //
+    add_instr(0x60, "MR0", "recall memory register R0 to RX", { {8, 9}, {0, 1} }, { "RCL0" });
+    add_instr(0x61, "MR1", "recall memory register R1 to RX", { {8, 9}, {1, 1} }, { "RCL1" });
+    add_instr(0x62, "MR2", "recall memory register R2 to RX", { {8, 9}, {2, 1} }, { "RCL2" });
+    add_instr(0x63, "MR3", "recall memory register R3 to RX", { {8, 9}, {3, 1} }, { "RCL3" });
+    add_instr(0x64, "MR4", "recall memory register R4 to RX", { {8, 9}, {4, 1} }, { "RCL4" });
+    add_instr(0x65, "MR5", "recall memory register R5 to RX", { {8, 9}, {5, 1} }, { "RCL5" });
+    add_instr(0x66, "MR6", "recall memory register R6 to RX", { {8, 9}, {6, 1} }, { "RCL6" });
+    add_instr(0x67, "MR7", "recall memory register R7 to RX", { {8, 9}, {7, 1} }, { "RCL7" });
+    add_instr(0x68, "MR8", "recall memory register R8 to RX", { {8, 9}, {8, 1} }, { "RCL8" });
+    add_instr(0x69, "MR9", "recall memory register R9 to RX", { {8, 9}, {9, 1} }, { "RCL9" });
+    add_instr(0x6A, "MRA", "recall memory register RA to RX", { {8, 9}, {7, 8} }, { "RCLA" });
+    add_instr(0x6B, "MRB", "recall memory register RB to RX", { {8, 9}, {8, 8} }, { "RCLB" });
+    add_instr(0x6C, "MRC", "recall memory register RC to RX", { {8, 9}, {9, 8} }, { "RCLC" });
+    add_instr(0x6D, "MRD", "recall memory register RD to RX", { {8, 9}, {10, 8} }, { "RCLD" });
+    add_instr(0x6E, "MRE", "recall memory register RE to RX", { {8, 9}, {11, 8} }, { "RCLE" });
 
     // Modes
     add_instr(mk_instruction::no_code, "AUT", "calculation mode", { {11, 9}, {8, 8} });
