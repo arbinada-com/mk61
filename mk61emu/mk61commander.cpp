@@ -174,11 +174,16 @@ void instruction_index::check_keys_not_exist(std::vector<mk_key_coord> keys)
     {
         if (instr_keys->keys().size() == keys.size())
         {
+            int match_count = 0;
             for (size_t i = 0; i != keys.size(); ++i)
             {
                 if (instr_keys->keys()[i] == keys[i])
-                    throw std::logic_error("Key sequence alredy exists: " + instr_keys->keys_to_string());
+                    ++match_count;
+                else
+                    break;
             }
+            if (match_count == keys.size())
+                throw std::logic_error("Key sequence alredy exists: " + instr_keys->keys_to_string());
         }
     }
 }
@@ -194,7 +199,7 @@ void instruction_index::init()
     add_instr(0x05, "5", "digit 5", { {5, 1} });
     add_instr(0x06, "6", "digit 6", { {6, 1} });
     add_instr(0x07, "7", "digit 7", { {7, 1} });
-    add_instr(0x08, "9", "digit 8", { {8, 1} });
+    add_instr(0x08, "8", "digit 8", { {8, 1} });
     add_instr(0x09, "9", "digit 9", { {9, 1} });
     add_instr(0x0A, ",", "decimal point", { {7, 8} }, {"."});
     add_instr(0x0B, "+/-", "changes the sign of a number", { {8, 8} }, {"/-/"});

@@ -78,7 +78,7 @@ public:
     mk_key_coord(const mk_key_coord&) = default;
     mk_key_coord& operator =(const mk_key_coord&) = default;
 public:
-    bool operator ==(const mk_key_coord& rhs)
+    bool operator ==(const mk_key_coord& rhs) const
     {
         return (m_key1 == rhs.m_key1) && (m_key2 == rhs.m_key2);
     }
