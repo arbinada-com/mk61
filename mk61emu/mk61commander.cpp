@@ -263,6 +263,12 @@ void instruction_index::init()
     add_instr(0x4E, "ME", "store RX to memory register RE", { {6, 9}, {11, 8} }, { "MSE", "STOE" });
     // Skip 0x4F
     add_instr(0x50, "R/S", "run/stop", { {2, 9} }, { "RS" });
+    add_instr(0x51, "GTO", "go to instruction", { {3, 9} }, { "GOTO" });
+    add_instr(0x52, "RTN", "return from subroutine", { {4, 9} }, { "RETURN" });
+    add_instr(0x53, "GSB", "go to subroutine", { {5, 9} }, { "GOSUB" });
+    add_instr(0x54, "NOP", "no operation", { {10, 9}, {0, 1} });
+    // Skip 0x55..56
+    add_instr(0x57, "x!=0", "check RX not equal to 0", { {11, 9}, {2, 9} }, { "x<>0", "xNE0"});
 
     //
     add_instr(0x60, "MR0", "recall memory register R0 to RX", { {8, 9}, {0, 1} }, { "RCL0" });
