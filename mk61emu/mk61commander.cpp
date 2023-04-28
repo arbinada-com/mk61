@@ -431,7 +431,7 @@ void mk61_commander::clear_screen()
 #ifdef _WIN32
     system("cls");
 #else
-    clrscr();
+    system("clear");
 #endif
 }
 
