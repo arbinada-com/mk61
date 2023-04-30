@@ -11,6 +11,8 @@ std::string strutils::to_upper(const std::string& s)
     for (const auto& c : s)
         result += (char)toupper(c);
     return result;
+    // Other way
+    // std::transform(cmd_up.begin(), cmd_up.end(), cmd_up.begin(), ::toupper);
 }
 
 /**

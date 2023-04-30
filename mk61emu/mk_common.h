@@ -3,6 +3,7 @@
 
 #include <cinttypes>
 #include <string>
+#include <vector>
 
 typedef unsigned char byte;
 
@@ -15,11 +16,13 @@ public:
 class mk_instruction
 {
 public:
-    mk_instruction(int32_t code, std::string mnemonics, std::string caption)
-        : m_code(code), m_mnemonics(mnemonics), m_caption(caption)
+    typedef std::vector<std::string> synonyms_t;
+public:
+    mk_instruction(int32_t code, std::string mnemonics, std::string caption, mk_instruction::synonyms_t synonyms)
+        : m_code(code), m_mnemonics(mnemonics), m_caption(caption), m_synonyms(synonyms)
     {}
     mk_instruction(int32_t code, std::string mnemonics)
-        : mk_instruction(code, mnemonics, "")
+        : mk_instruction(code, mnemonics, "", {})
     {}
     mk_instruction(const mk_instruction&) = default;
     mk_instruction& operator =(const mk_instruction&) = default;
@@ -30,11 +33,13 @@ public:
 public:
     int32_t code() const { return m_code; }
     const std::string& mnemonics() const { return m_mnemonics; }
-    const std::string& caption() { return m_caption; }
+    const std::string& caption() const { return m_caption; }
+    const synonyms_t& synonyms() const { return m_synonyms; }
 private:
     int32_t m_code;
     std::string m_mnemonics;
     std::string m_caption;
+    synonyms_t m_synonyms;
 };
 
 enum class mk_result_t

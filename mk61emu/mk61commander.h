@@ -22,6 +22,7 @@ enum class mk_cmd_kind_t
     cmd_off,
     cmd_output_state,
     cmd_help,
+    cmd_mode,
     cmd_keys
 };
 
@@ -72,19 +73,15 @@ private:
 class mk_key_coord
 {
 public:
-    mk_key_coord(uint8_t key1, uint8_t key2)
-        : m_key1(key1), m_key2(key2)
-    {}
+    mk_key_coord(uint8_t key1, uint8_t key2);
     mk_key_coord(const mk_key_coord&) = default;
     mk_key_coord& operator =(const mk_key_coord&) = default;
 public:
-    bool operator ==(const mk_key_coord& rhs) const
-    {
-        return (m_key1 == rhs.m_key1) && (m_key2 == rhs.m_key2);
-    }
+    bool operator ==(const mk_key_coord& rhs) const;
 public:
     uint8_t key1() const { return m_key1; }
     uint8_t key2() const { return m_key2; }
+    std::string to_string() const;
 private:
     uint8_t m_key1;
     uint8_t m_key2;
@@ -106,25 +103,34 @@ private:
 };
 
 
+using mk_instruction_keys_sptr = std::shared_ptr<mk_instruction_keys>;
+
 class instruction_index
 {
 public:
+    typedef std::vector<mk_instruction_keys_sptr> data_t;
+    typedef std::map<std::string, mk_instruction_keys_sptr> index_t;
+public:
     void init();
 public:
+    mk_instruction_keys_sptr find(const std::string& mnemonics) const;
     static std::string make_key(const std::string& mnemonics);
+    const data_t& data() const {
+        return m_data;
+    }
 private:
     void add_instr(
         int32_t code,
         const std::string& mnemonics,
         const std::string& caption,
         std::vector<mk_key_coord> keys,
-        std::vector<std::string> mnemonics_synonyms = {}
+        mk_instruction::synonyms_t mnemonics_synonyms = {}
     );
     void check_mnemonics_not_exists(const std::string& mnemonics);
     void check_keys_not_exist(std::vector<mk_key_coord> keys);
 private:
-    std::vector<std::shared_ptr<mk_instruction_keys> > m_data;
-    std::map<std::string, std::shared_ptr<mk_instruction_keys>> m_index;
+    data_t m_data;
+    index_t m_index;
 };
 
 
@@ -145,6 +151,7 @@ private:
     void clear_screen();
     void output_display();
     void show_help();
+    void show_short_help();
     void output_state();
 private:
     void show_message(const mk_message_t message_type, const std::string message);
